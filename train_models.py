@@ -13,8 +13,9 @@ from scipy.stats import randint, uniform          # para RandomizedSearchCV
 MODEL_DIR = 'models_lgbm'
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-HORIZON_DAYS = 60  # Horizonte de predicción
 HOURS_RANGE = list(range(9, 22))  # Rango horario 9–21
+# Fecha límite para las predicciones automáticas
+PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
 
 # --- CONFIGURACIÓN DE MODELOS ---
 DEFAULT_PARAMS = {
@@ -63,7 +64,7 @@ from scipy.stats import randint, uniform
 from sklearn.model_selection import RandomizedSearchCV
 
 # DEFAULT_PARAMS debe estar definido como antes o importado
-# HOURS_RANGE, HORIZON_DAYS, etc. sin cambios
+# HOURS_RANGE y PREDICTION_END_DATE se mantienen sin cambios
 
 
 def train_model_for_branch(
@@ -197,7 +198,7 @@ def generate_predictions(
         end_date: str | pd.Timestamp | None = None,
 ) -> pd.DataFrame:
     """
-    Genera predicciones para los próximos HORIZON_DAYS × 24 h
+    Genera predicciones para las horas restantes hasta `PREDICTION_END_DATE`
     usando los modelos previamente entrenados.
     """
 
@@ -214,12 +215,15 @@ def generate_predictions(
             raise ValueError("start_date debe ser posterior al último dato historico")
 
     if end_date is None:
-        horizon = HORIZON_DAYS
+        end_dt = PREDICTION_END_DATE
     else:
         end_dt = pd.to_datetime(end_date)
-        horizon = (end_dt - start_dt).days + 1
-        if horizon <= 0:
+        if end_dt <= start_dt:
             raise ValueError("end_date debe ser posterior a start_date")
+
+    horizon = (end_dt - start_dt).days + 1
+    if horizon <= 0:
+        return pd.DataFrame()
 
     fut_rows = [
         {"FECHA": start_dt + timedelta(days=d), "HORA": h, "COD_SUC": branch}
@@ -294,12 +298,7 @@ if __name__ == '__main__':
     # Generación de predicciones de ejemplo
     example_branch = df['COD_SUC'].iloc[0]
     print(f"\n🔮 Generando predicciones de ejemplo para sucursal {example_branch}...")
-    df_pred = generate_predictions(
-        df,
-        example_branch,
-        start_date="2025-08-02",
-        end_date="2025-11-02"
-    )
+    df_pred = generate_predictions(df, example_branch)
 
     # Mostrar resumen
     print("\n📊 Resumen de predicciones:")

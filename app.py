@@ -14,9 +14,10 @@ import lightgbm as lgb
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 # --- CONSTANTES ---
-HORIZON_DAYS = 60
 HOURS_RANGE  = list(range(9, 22))  # 9,10,...,21
 MODEL_DIR    = "models_lgbm"
+# Fecha límite para las proyecciones automáticas
+PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
 
 # --- CONFIGURACIÓN INICIAL ---
 st.set_page_config(page_title="Predicción de Dotación Óptima (Hourly)", layout="wide")
@@ -67,6 +68,10 @@ def load_data():
 
 
 df = load_data()
+
+# Horizonte dinámico hasta fin de 2025
+LAST_DATA_DATE = df["FECHA"].max()
+HORIZON_DAYS = max((PREDICTION_END_DATE - (LAST_DATA_DATE + timedelta(days=1))).days + 1, 0)
 
 MESES_FUTURO = 12   # horizonte de predicción (puedes cambiarlo)
 
@@ -411,7 +416,7 @@ st.title("🔍 Predicción de Dotación y Efectividad por Hora")
 days_proj = st.slider(
     "Días a proyectar",
     min_value=1, max_value=HORIZON_DAYS,
-    value=30, step=1,
+    value=min(30, HORIZON_DAYS), step=1,
 )
 sucursales = sorted(df["COD_SUC"].unique())
 cod_suc     = st.selectbox("Selecciona una sucursal", sucursales)
@@ -548,14 +553,14 @@ df_pred = forecast_hourly(
     df_suc,              # histórico
     cod_suc,
     efectividad_obj,
-    HORIZON_DAYS,
+    days_proj,
     models               # se pasa como _models, pero no se hashea
 )
 
 
 
 # ——— TABLA POR HORA ———
-st.subheader(f"📈 Predicciones para los próximos {HORIZON_DAYS} días")
+st.subheader(f"📈 Predicciones para los próximos {days_proj} días")
 st.subheader("Por hora")
 
 # 1) Seleccionamos únicamente las columnas de df_pred que necesitamos
