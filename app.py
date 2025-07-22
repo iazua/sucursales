@@ -1359,4 +1359,25 @@ for i, turno_label in enumerate(orden_turnos, start=1):
             f"mín **{r['Minimo']:.2f}%** registrado el _{r['Fecha_min']}_."
         )
 
+st.markdown("---")
+st.subheader("🧮 Matriz de correlación de variables históricas")
+
+cols_corr = ["T_VISITAS", "T_AO", "T_AO_VENTA", "DOTACION", "P_EFECTIVIDAD"]
+df_corr = df_suc[cols_corr].dropna()
+if not df_corr.empty:
+    corr = df_corr.corr().round(2)
+    fig = px.imshow(
+        corr,
+        text_auto=True,
+        color_continuous_scale="Purples",
+        title="Correlación entre variables"
+    )
+    fig.update_layout(
+        plot_bgcolor="#1a0033",
+        paper_bgcolor="#1a0033",
+        font_color="#FFFFFF",
+        title_font_color="#FFFFFF"
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
 

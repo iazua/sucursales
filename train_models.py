@@ -116,12 +116,15 @@ def train_model_for_branch(
 
     base = lgb.LGBMRegressor(random_state=42, n_jobs=-1, verbose=-1)
 
+    # Validación temporal para evitar fugas de información
+    tscv = TimeSeriesSplit(n_splits=3)
+
     search = RandomizedSearchCV(
         estimator=base,
         param_distributions=param_dist,
         n_iter=n_iter,
         scoring="neg_mean_absolute_error",
-        cv=3,
+        cv=tscv,
         n_jobs=-1,
         verbose=1,
         random_state=42
@@ -230,7 +233,8 @@ def generate_predictions(
 
         # 3-b) inferencia
         model = joblib.load(model_path)
-        df_out[f"{target}_pred"] = model.predict(X_fut)
+        preds = model.predict(X_fut)
+        df_out[f"{target}_pred"] = np.maximum(preds, 0)
 
     # 4) métricas y dotación ─────────────────────────────────────────────────
     df_out["T_AO_VENTA_req"] = df_out["T_AO_pred"] * efectividad_obj
@@ -249,6 +253,11 @@ def generate_predictions(
 
     df_out["DOTACION_req"]      = dots
     df_out["P_EFECTIVIDAD_opt"] = effs
+
+    # Asegurar que todas las predicciones sean no negativas
+    for col in ["T_VISITAS_pred", "T_AO_pred", "T_AO_VENTA_req"]:
+        if col in df_out:
+            df_out[col] = df_out[col].clip(lower=0)
 
     return df_out
 
