@@ -93,17 +93,25 @@ def prepare_features(
     YEAR_HOURS  = 24 * 365  # aproximación a un año
     MONTH_HOURS = 24 * 30   # aproximación a un mes
     lags.append(YEAR_HOURS)
+
+    lag_data = {}
     for col in lag_cols:
         if col not in df.columns:
             df[col] = np.nan
         for lag in lags:
-            df[f"{col}_lag{lag}"]       = df[col].shift(lag)
-            df[f"{col}_roll{lag}_mean"] = df[col].shift(1).rolling(lag, min_periods=1).mean()
-            df[f"{col}_roll{lag}_std"]  = df[col].shift(1).rolling(lag, min_periods=1).std().fillna(0)
-        # promedio del mismo mes el año anterior
-        df[f"{col}_prev_year_month_mean"] = (
+            lag_data[f"{col}_lag{lag}"] = df[col].shift(lag)
+            lag_data[f"{col}_roll{lag}_mean"] = (
+                df[col].shift(1).rolling(lag, min_periods=1).mean()
+            )
+            lag_data[f"{col}_roll{lag}_std"] = (
+                df[col].shift(1).rolling(lag, min_periods=1).std().fillna(0)
+            )
+        lag_data[f"{col}_prev_year_month_mean"] = (
             df[col].shift(YEAR_HOURS).rolling(MONTH_HOURS, min_periods=1).mean()
         )
+
+    df = pd.concat([df, pd.DataFrame(lag_data, index=df.index)], axis=1)
+    df = df.copy()  # defragment frame
 
     # ------------------------------------
     # 4) Diferencias con días anteriores
