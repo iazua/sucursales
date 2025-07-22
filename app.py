@@ -1377,6 +1377,14 @@ turno_map = {1: '9–11', 2: '12–14', 3: '15–17', 4: '18–21', 0: 'Fuera ra
 df_perf['Turno'] = df_perf['turno'].map(turno_map)
 df_perf['Efectividad_pct'] = (df_perf['Efectividad'] * 100).round(2)
 
+# Tarjetas de efectividad promedio por turno
+df_valid = df_perf[df_perf['turno'] > 0]
+if not df_valid.empty:
+    cols_avg = st.columns(len(df_valid))
+    for i, row in enumerate(df_valid.sort_values('turno').itertuples(), start=0):
+        with cols_avg[i]:
+            st.metric(f"Turno {row.Turno}", f"{row.Efectividad_pct:.2f}%")
+
 # 2) Identificar mejor y peor turno (ignorando el código 0)
 df_valid = df_perf[df_perf['turno'] > 0]
 if not df_valid.empty:
@@ -1419,6 +1427,26 @@ fig_scatter.update_layout(
     title_font_color='#FFFFFF'
 )
 st.plotly_chart(fig_scatter, use_container_width=True)
+
+# Distribución de efectividad por turno
+df_box = df_turnos[df_turnos['turno'] > 0].copy()
+df_box['Turno'] = df_box['turno'].map(turno_map)
+fig_box_eff = px.box(
+    df_box,
+    x='Turno',
+    y='P_EFECTIVIDAD',
+    points='outliers',
+    labels={'Turno':'Turno', 'P_EFECTIVIDAD':'Efectividad'},
+    title=f'Distribuci\u00f3n de efectividad por turno ({rango_seleccionado})'
+)
+fig_box_eff.update_layout(
+    plot_bgcolor='#1a0033',
+    paper_bgcolor='#1a0033',
+    font_color='#FFFFFF',
+    title_font_color='#FFFFFF',
+    yaxis_tickformat='.2f'
+)
+st.plotly_chart(fig_box_eff, use_container_width=True)
 
 st.markdown("---")
 st.subheader("🧮 Matriz de correlación de variables históricas")
