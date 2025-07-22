@@ -1,0 +1,13 @@
+streamlit
+pandas
+numpy
+plotly
+pydeck
+lightgbm
+scikit-learn
+joblib
+statsmodels
+scipy
+holidays
+workalendar
+openpyxl
