@@ -192,7 +192,9 @@ def generate_predictions(
         df: pd.DataFrame,
         branch: int,
         targets: list = ["T_VISITAS", "T_AO"],
-        efectividad_obj: float = 0.62
+        efectividad_obj: float = 0.62,
+        start_date: str | pd.Timestamp | None = None,
+        end_date: str | pd.Timestamp | None = None,
 ) -> pd.DataFrame:
     """
     Genera predicciones para los próximos HORIZON_DAYS × 24 h
@@ -202,11 +204,26 @@ def generate_predictions(
     # 1) separar histórico de la sucursal ─────────────────────────────────────
     df_hist = df[df["COD_SUC"] == branch].copy()
 
-    # 2) construir grid futuro FECHA×HORA ─────────────────────────────────────
+    # 2) determinar rango futuro personalizado ---------------------------------
     last_date = df_hist["FECHA"].max()
+    if start_date is None:
+        start_dt = last_date + timedelta(days=1)
+    else:
+        start_dt = pd.to_datetime(start_date)
+        if start_dt <= last_date:
+            raise ValueError("start_date debe ser posterior al último dato historico")
+
+    if end_date is None:
+        horizon = HORIZON_DAYS
+    else:
+        end_dt = pd.to_datetime(end_date)
+        horizon = (end_dt - start_dt).days + 1
+        if horizon <= 0:
+            raise ValueError("end_date debe ser posterior a start_date")
+
     fut_rows = [
-        {"FECHA": last_date + timedelta(days=d), "HORA": h, "COD_SUC": branch}
-        for d in range(1, HORIZON_DAYS + 1)
+        {"FECHA": start_dt + timedelta(days=d), "HORA": h, "COD_SUC": branch}
+        for d in range(horizon)
         for h in HOURS_RANGE
     ]
     df_fut  = assign_turno(pd.DataFrame(fut_rows))
@@ -277,7 +294,12 @@ if __name__ == '__main__':
     # Generación de predicciones de ejemplo
     example_branch = df['COD_SUC'].iloc[0]
     print(f"\n🔮 Generando predicciones de ejemplo para sucursal {example_branch}...")
-    df_pred = generate_predictions(df, example_branch)
+    df_pred = generate_predictions(
+        df,
+        example_branch,
+        start_date="2025-08-02",
+        end_date="2025-11-02"
+    )
 
     # Mostrar resumen
     print("\n📊 Resumen de predicciones:")

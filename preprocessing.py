@@ -90,6 +90,9 @@ def prepare_features(
     # ------------------------------------
     lag_cols = ["T_VISITAS", "T_AO", "T_AO_VENTA", "DOTACION"]
     lags     = [1,2,3,6,12,24,168]
+    YEAR_HOURS  = 24 * 365  # aproximación a un año
+    MONTH_HOURS = 24 * 30   # aproximación a un mes
+    lags.append(YEAR_HOURS)
     for col in lag_cols:
         if col not in df.columns:
             df[col] = np.nan
@@ -97,6 +100,10 @@ def prepare_features(
             df[f"{col}_lag{lag}"]       = df[col].shift(lag)
             df[f"{col}_roll{lag}_mean"] = df[col].shift(1).rolling(lag, min_periods=1).mean()
             df[f"{col}_roll{lag}_std"]  = df[col].shift(1).rolling(lag, min_periods=1).std().fillna(0)
+        # promedio del mismo mes el año anterior
+        df[f"{col}_prev_year_month_mean"] = (
+            df[col].shift(YEAR_HOURS).rolling(MONTH_HOURS, min_periods=1).mean()
+        )
 
     # ------------------------------------
     # 4) Diferencias con días anteriores
@@ -128,6 +135,8 @@ def prepare_features(
     ]
     # Añadimos dinámicamente todas las columnas generadas con *_lag*, *_roll* y *_std*
     features += [c for c in df.columns if any(s in c for s in ["_lag","roll"])]
+    # Columnas que utilizan información del mismo mes del año anterior
+    features += [c for c in df.columns if "prev_year" in c]
 
     # Diferencias
     features += [c for c in df.columns if any(s in c for s in ["diff_24h","diff_168h"])]
