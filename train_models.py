@@ -245,9 +245,12 @@ def generate_predictions(
     # cálculo de dotación óptima (igual que antes) …
     dots, effs = [], []
     for _, r in df_out.iterrows():
+        # `estimar_dotacion_optima` espera el parámetro opcional
+        # `params_efectividad`. El nombre `params_sig` aquí provocaba
+        # un error de tipo por argumento inesperado.
         dot, eff = estimar_dotacion_optima(
             [r["T_AO_pred"]], [r["T_AO_VENTA_req"]],
-            efectividad_obj, params_sig=None
+            efectividad_obj
         )
         dots.append(dot); effs.append(eff)
 
