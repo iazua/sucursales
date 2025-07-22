@@ -34,6 +34,13 @@ python train_models.py
 
 Los modelos resultantes se guardarán en la carpeta `models_lgbm/`.
 
+### Predicciones para agosto–noviembre 2025
+
+El script `train_models.py` ahora permite especificar un rango de fechas
+para la generación de pronósticos. Por defecto, al ejecutarlo se
+entrenan los modelos y se produce un ejemplo de predicción para el
+periodo del **2 de agosto de 2025 al 2 de noviembre de 2025**.
+
 ## Ejecución de la aplicación
 
 Para lanzar la aplicación en modo local:
