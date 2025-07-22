@@ -1,21 +1,19 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
 import os
 from datetime import timedelta
+from train_models import generate_predictions
 import plotly.express as px
 from preprocessing import assign_turno, prepare_features
 from utils import calcular_efectividad, estimar_dotacion_optima, estimar_parametros_efectividad
 import pydeck as pdk
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import lightgbm as lgb
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 # --- CONSTANTES ---
-HOURS_RANGE  = list(range(9, 22))  # 9,10,...,21
-MODEL_DIR    = "models_lgbm"
+# Rango horario estándar para la proyección (9–21)
+HOURS_RANGE = list(range(9, 22))
 # Fecha límite para las proyecciones automáticas
 PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
 
@@ -439,122 +437,35 @@ efectividad_obj = st.slider(
     min_value=0.0, max_value=1.0, value=0.62, step=0.01, format="%.2f"
 )
 
-# — CARGA DE MODELOS —
-@st.cache_resource(show_spinner="Cargando modelo…")
-def load_model(var: str, cod: str):
-    """Carga desde disco un modelo LightGBM específico y lo cachea."""
-    path = os.path.join(MODEL_DIR, f"predictor_{var}_{cod}.pkl")
-    return pickle.load(open(path, "rb")) if os.path.exists(path) else None
-
-
-def load_models(cod: str) -> dict[str, lgb.LGBMRegressor | None]:
-    """Obtiene los dos modelos requeridos para una sucursal."""
-    return {var: load_model(var, cod) for var in ("T_VISITAS", "T_AO")}
-
-
-models = load_models(cod_suc)
-if None in models.values():
-    st.error("No se encontraron ambos modelos para esta sucursal en models_lgbm/")
-    st.stop()
-
 # --- app.py ---
 
+
+
 @st.cache_data(show_spinner="Generando pronóstico…")
-def forecast_hourly(df_hist: pd.DataFrame,
-                    cod_suc: int,
-                    efect_obj: float,
-                    days: int,
-                    _models: dict[str, lgb.LGBMRegressor]) -> pd.DataFrame:
-    """
-    Predicción autoregresiva hora a hora sobre `days` días futuros.
-    Incluye variables de hora y NO descarta las columnas temporales.
-    """
-
-    # --- parámetros de efectividad (sin cambios) ----------------------------
-    hist_params = df_hist[["DOTACION", "T_AO", "T_AO_VENTA"]].dropna()
-    params_sig = (
-        estimar_parametros_efectividad(hist_params)
-        if len(hist_params) >= 3
-        else {"L": 1.0, "k": 0.5, "x0_base": 5.0, "x0_factor_t_ao_venta": 0.05}
+def forecast_fast(df_all: pd.DataFrame,
+                  cod_suc: int,
+                  efect_obj: float,
+                  days: int) -> pd.DataFrame:
+    """Versión rápida usando `generate_predictions` vectorizado."""
+    last_date = df_all[df_all["COD_SUC"] == cod_suc]["FECHA"].max()
+    start_dt = last_date + timedelta(days=1)
+    end_dt = start_dt + timedelta(days=days - 1)
+    return generate_predictions(
+        df_all,
+        branch=cod_suc,
+        efectividad_obj=efect_obj,
+        start_date=start_dt,
+        end_date=end_dt,
     )
-
-    # --- grid futuro FECHA×HORA --------------------------------------------
-    last_date = df_hist["FECHA"].max()
-    fut_rows = [
-        {"FECHA": last_date + timedelta(days=d), "HORA": h, "COD_SUC": cod_suc}
-        for d in range(1, days + 1) for h in HOURS_RANGE
-    ]
-    df_fut  = assign_turno(pd.DataFrame(fut_rows))
-    df_comb = pd.concat([df_hist, df_fut], ignore_index=True, sort=False)
-
-    preds_vis, preds_ao = [], []
-    start_idx = len(df_hist)
-
-    # --- bucle autoregresivo hora a hora ------------------------------------
-    for step in range(len(df_fut)):
-        idx = start_idx + step
-
-        # VISITAS ------------------------------------------------------------
-        X_vis, _ = prepare_features(
-            df_comb.iloc[: idx + 1].copy(),
-            target="T_VISITAS",
-            is_prediction=True,
-            include_time_features=True      # ← ①
-        )
-        X_vis = X_vis.iloc[[-1]]           # ya NO se dropea 'HORA'
-
-        # ACEPTA OFERTA ------------------------------------------------------
-        X_ao, _ = prepare_features(
-            df_comb.iloc[: idx + 1].copy(),
-            target="T_AO",
-            is_prediction=True,
-            include_time_features=True      # ← ①
-        )
-        X_ao = X_ao.iloc[[-1]]
-
-        # predicciones
-        y_vis = _models["T_VISITAS"].predict(X_vis)[0]
-        y_ao  = _models["T_AO"].predict(X_ao)[0]
-
-        preds_vis.append(y_vis)
-        preds_ao.append(y_ao)
-
-        # inyectar para el siguiente paso
-        df_comb.at[idx, "T_VISITAS"] = y_vis
-        df_comb.at[idx, "T_AO"]      = y_ao
-
-    # --- ensamblar salida ---------------------------------------------------
-    df_out = df_fut.copy().reset_index(drop=True)
-    df_out["T_VISITAS_pred"] = preds_vis
-    df_out["T_AO_pred"]      = preds_ao
-
-    df_out["T_AO_VENTA_req"]    = df_out["T_AO_pred"] * efect_obj
-    df_out["P_EFECTIVIDAD_req"] = calcular_efectividad(
-        df_out["T_AO_pred"], df_out["T_AO_VENTA_req"]
-    )
-
-    # dotación óptima
-    dots, effs = [], []
-    for _, r in df_out.iterrows():
-        dot, eff = estimar_dotacion_optima(
-            [r["T_AO_pred"]], [r["T_AO_VENTA_req"]],
-            efect_obj, params_sig
-        )
-        dots.append(dot); effs.append(eff)
-
-    df_out["DOTACION_req"]      = dots
-    df_out["P_EFECTIVIDAD_opt"] = effs
-    return df_out
 
 
 
 # ---------- LLAMADA ----------
-df_pred = forecast_hourly(
-    df_suc,              # histórico
+df_pred = forecast_fast(
+    df,                  # dataset completo
     cod_suc,
     efectividad_obj,
     days_proj,
-    models               # se pasa como _models, pero no se hashea
 )
 
 
