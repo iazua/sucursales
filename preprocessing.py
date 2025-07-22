@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import holidays
+from scipy.signal import find_peaks
 
 
 def assign_turno(df: pd.DataFrame) -> pd.DataFrame:
@@ -16,6 +17,16 @@ def assign_turno(df: pd.DataFrame) -> pd.DataFrame:
     )
     df['turno'] = df['turno'].cat.add_categories([0]).fillna(0).astype(int)
     return df
+
+def detect_spikes(series: pd.Series, prominence: float = 1.0) -> pd.Series:
+    """Devuelve un indicador binario de picos usando scipy.signal.find_peaks."""
+    if series.isna().all():
+        return pd.Series([0] * len(series), index=series.index)
+    values = series.fillna(0).to_numpy()
+    peaks, _ = find_peaks(values, prominence=prominence)
+    flags = np.zeros(len(values), dtype=int)
+    flags[peaks] = 1
+    return pd.Series(flags, index=series.index)
 
 def prepare_features(
     df: pd.DataFrame,
@@ -123,6 +134,12 @@ def prepare_features(
         df['ao_diff_24h'] = df['T_AO'] - df['T_AO'].shift(24)
         df['ao_diff_168h']= df['T_AO'] - df['T_AO'].shift(168)
 
+    # Indicadores de picos para T_AO y T_VISITAS
+    if 'T_AO' in df.columns:
+        df['spike_ao'] = detect_spikes(df['T_AO'])
+    if 'T_VISITAS' in df.columns:
+        df['spike_visitas'] = detect_spikes(df['T_VISITAS'])
+
     # --- 5) Codificación cíclica e indicador pico ---
     if include_time_features and 'HORA' in df.columns:
         H = df['HORA']
@@ -148,6 +165,9 @@ def prepare_features(
 
     # Diferencias
     features += [c for c in df.columns if any(s in c for s in ["diff_24h","diff_168h"])]
+
+    # Indicadores de picos
+    features += [c for c in df.columns if c in ['spike_ao', 'spike_visitas']]
 
     # Time features opcionales
     if include_time_features:
