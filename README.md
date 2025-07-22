@@ -41,6 +41,10 @@ generación de pronósticos. Por defecto, al ejecutarlo se entrenan los modelos 
 se produce un ejemplo de predicción que cubre desde el día siguiente al último
 registro disponible hasta el **31 de diciembre de 2025**.
 
+La aplicación ahora utiliza un método de inferencia vectorizado que acelera la
+generación de pronósticos para horizontes extensos (por ejemplo, más de 300
+días).
+
 ## Ejecución de la aplicación
 
 Para lanzar la aplicación en modo local:
