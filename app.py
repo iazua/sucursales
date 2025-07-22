@@ -1359,6 +1359,68 @@ for i, turno_label in enumerate(orden_turnos, start=1):
         )
 
 st.markdown("---")
+
+# --- NUEVO: Ranking de efectividad por turno ---
+st.subheader("🏆 Turnos con mejor y peor efectividad")
+
+# 1) Efectividad y dotación promedio por turno
+df_perf = (
+    df_turnos
+    .groupby('turno')
+    .agg(
+        Efectividad=('P_EFECTIVIDAD', 'mean'),
+        Dotacion=('DOTACION', 'mean')
+    )
+    .reset_index()
+)
+turno_map = {1: '9–11', 2: '12–14', 3: '15–17', 4: '18–21', 0: 'Fuera rango'}
+df_perf['Turno'] = df_perf['turno'].map(turno_map)
+df_perf['Efectividad_pct'] = (df_perf['Efectividad'] * 100).round(2)
+
+# 2) Identificar mejor y peor turno (ignorando el código 0)
+df_valid = df_perf[df_perf['turno'] > 0]
+if not df_valid.empty:
+    best = df_valid.loc[df_valid['Efectividad'].idxmax()]
+    worst = df_valid.loc[df_valid['Efectividad'].idxmin()]
+
+    col_best, col_worst = st.columns(2)
+    with col_best:
+        st.metric("Mejor turno", f"{best['Turno']} ({best['Efectividad_pct']}%)")
+    with col_worst:
+        st.metric("Peor turno", f"{worst['Turno']} ({worst['Efectividad_pct']}%)")
+
+# 3) Barra de efectividad promedio por turno
+fig_rank = px.bar(
+    df_valid.sort_values('Efectividad', ascending=False),
+    x='Turno', y='Efectividad_pct',
+    labels={'Efectividad_pct': 'Efectividad (%)'},
+    title=f'Efectividad promedio por turno ({rango_seleccionado})'
+)
+fig_rank.update_layout(
+    plot_bgcolor='#1a0033',
+    paper_bgcolor='#1a0033',
+    font_color='#FFFFFF',
+    title_font_color='#FFFFFF'
+)
+st.plotly_chart(fig_rank, use_container_width=True)
+
+# 4) Dispersión Dotación vs Efectividad por turno
+fig_scatter = px.scatter(
+    df_valid,
+    x='Dotacion', y='Efectividad_pct', text='Turno',
+    labels={'Dotacion': 'Dotación promedio', 'Efectividad_pct': 'Efectividad (%)'},
+    title='Dotación promedio vs Efectividad por turno'
+)
+fig_scatter.update_traces(textposition='top center')
+fig_scatter.update_layout(
+    plot_bgcolor='#1a0033',
+    paper_bgcolor='#1a0033',
+    font_color='#FFFFFF',
+    title_font_color='#FFFFFF'
+)
+st.plotly_chart(fig_scatter, use_container_width=True)
+
+st.markdown("---")
 st.subheader("🧮 Matriz de correlación de variables históricas")
 
 cols_corr = ["T_VISITAS", "T_AO", "T_AO_VENTA", "DOTACION", "P_EFECTIVIDAD"]
