@@ -435,13 +435,16 @@ efectividad_obj = st.slider(
 )
 
 # — CARGA DE MODELOS —
-@st.cache_resource(show_spinner="Cargando modelos…")
-def load_models(cod):
-    mods = {}
-    for var in ("T_VISITAS", "T_AO"):
-        path = os.path.join(MODEL_DIR, f"predictor_{var}_{cod}.pkl")
-        mods[var] = pickle.load(open(path, "rb")) if os.path.exists(path) else None
-    return mods
+@st.cache_resource(show_spinner="Cargando modelo…")
+def load_model(var: str, cod: str):
+    """Carga desde disco un modelo LightGBM específico y lo cachea."""
+    path = os.path.join(MODEL_DIR, f"predictor_{var}_{cod}.pkl")
+    return pickle.load(open(path, "rb")) if os.path.exists(path) else None
+
+
+def load_models(cod: str) -> dict[str, lgb.LGBMRegressor | None]:
+    """Obtiene los dos modelos requeridos para una sucursal."""
+    return {var: load_model(var, cod) for var in ("T_VISITAS", "T_AO")}
 
 
 models = load_models(cod_suc)
@@ -550,10 +553,6 @@ df_pred = forecast_hourly(
 )
 
 
-
-
-
-df_pred = forecast_hourly(df_suc, cod_suc, efectividad_obj, HORIZON_DAYS)
 
 # ——— TABLA POR HORA ———
 st.subheader(f"📈 Predicciones para los próximos {HORIZON_DAYS} días")
