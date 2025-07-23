@@ -28,6 +28,32 @@ def detect_spikes(series: pd.Series, prominence: float = 1.0) -> pd.Series:
     flags[peaks] = 1
     return pd.Series(flags, index=series.index)
 
+
+def add_spike_label(
+    df: pd.DataFrame,
+    window_days: int = 30,
+    quantile: float = 0.95
+) -> pd.DataFrame:
+    """Genera una columna ``is_spike`` para cada sucursal.
+
+    Se marca como 1 cuando ``T_AO`` está por sobre el percentil especificado de
+    las últimas ``window_days``.
+    """
+    df = df.sort_values(["COD_SUC", "FECHA", "HORA"]).copy()
+
+    win = window_days * 24  # aproximación en horas
+    spike_flags = []
+    for _, g in df.groupby("COD_SUC"):
+        thresh = (
+            g["T_AO"].rolling(win, min_periods=1)
+            .quantile(quantile)
+            .shift(1)
+        )
+        spike_flags.append((g["T_AO"] > thresh).astype(int))
+
+    df["is_spike"] = pd.concat(spike_flags).sort_index()
+    return df
+
 def prepare_features(
     df: pd.DataFrame,
     target: str,

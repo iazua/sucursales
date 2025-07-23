@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import lightgbm as lgb
 from sklearn.model_selection import TimeSeriesSplit, RandomizedSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from preprocessing import prepare_features, assign_turno
+from preprocessing import prepare_features, assign_turno, add_spike_label
 from utils import estimar_dotacion_optima, estimar_parametros_efectividad, calcular_efectividad
 from scipy.stats import randint, uniform          # para RandomizedSearchCV
 # --- CONSTANTES ---
@@ -52,6 +52,9 @@ def load_and_preprocess_data(file_path: str) -> pd.DataFrame:
     # Asegurar P_EFECTIVIDAD
     if 'P_EFECTIVIDAD' not in df.columns:
         df['P_EFECTIVIDAD'] = calcular_efectividad(df['T_AO'], df['T_AO_VENTA'])
+
+    # Crear etiqueta de picos de T_AO
+    df = add_spike_label(df)
 
     return df
 
@@ -151,6 +154,33 @@ def train_model_for_branch(
     return best
 
 
+def train_spike_classifier(
+        df_branch: pd.DataFrame,
+        n_estimators: int = 200
+) -> lgb.LGBMClassifier:
+    """Entrena un clasificador binario para predecir picos de ``T_AO``."""
+
+    X, _ = prepare_features(
+        df_branch,
+        "T_AO",
+        is_prediction=False,
+        include_time_features=True,
+    )
+    valid = df_branch["T_AO"].notna()
+    y = df_branch.loc[valid, "is_spike"].fillna(0).astype(int)
+
+    clf = lgb.LGBMClassifier(
+        objective="binary",
+        n_estimators=n_estimators,
+        learning_rate=0.05,
+        num_leaves=31,
+        random_state=42,
+        n_jobs=-1,
+    )
+    clf.fit(X, y)
+    return clf
+
+
 
 def train_all_models(
         df: pd.DataFrame,
@@ -182,6 +212,12 @@ def train_all_models(
                 model_path = os.path.join(MODEL_DIR, f"predictor_{target}_{branch}.pkl")
                 joblib.dump(model, model_path)
                 print(f"💾 Modelo guardado en {model_path}")
+
+                if target == 'T_AO':
+                    clf = train_spike_classifier(df_branch)
+                    clf_path = os.path.join(MODEL_DIR, f"spike_{branch}.pkl")
+                    joblib.dump(clf, clf_path)
+                    print(f"💾 Clasificador de spikes guardado en {clf_path}")
 
             except Exception as e:
                 print(f"❌ Error entrenando sucursal {branch}: {str(e)}")
@@ -256,6 +292,16 @@ def generate_predictions(
         model = joblib.load(model_path)
         preds = model.predict(X_fut)
         df_out[f"{target}_pred"] = np.maximum(preds, 0)
+
+        if target == "T_AO":
+            spike_path = os.path.join(MODEL_DIR, f"spike_{branch}.pkl")
+            if os.path.exists(spike_path):
+                clf = joblib.load(spike_path)
+                p_spike = clf.predict_proba(X_fut)[:, 1]
+                df_out["p_spike"] = p_spike
+                df_out["T_AO_pred"] = df_out["T_AO_pred"] * (1 + p_spike)
+            else:
+                df_out["p_spike"] = np.nan
 
     # 4) métricas y dotación ─────────────────────────────────────────────────
     df_out["T_AO_VENTA_req"] = df_out["T_AO_pred"] * efectividad_obj
