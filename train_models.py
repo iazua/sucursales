@@ -5,7 +5,7 @@ import joblib
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.statespace.sarimax import SARIMAX
-from preprocessing import forecast_dotacion_prophet
+from preprocessing import forecast_dotacion_prophet, forecast_target_prophet
 
 
 
@@ -89,6 +89,18 @@ def train_models(
         )
         forecast_path = os.path.join(PROPHET_DIR, f"{branch}_forecast.csv")
         prophet_forecast.to_csv(forecast_path, index=False)
+
+        # --- Prophet forecasts for operational targets ---
+        for tgt in TARGETS:
+            df_t = df_branch[[tgt]].reset_index()
+            prophet_t = forecast_target_prophet(
+                df_t,
+                target=tgt,
+                horizon_days=horizon_days,
+                changepoint_prior_scale=changepoint_prior_scale,
+            )
+            path_t = os.path.join(PROPHET_DIR, f"{branch}_{tgt}_forecast.csv")
+            prophet_t.to_csv(path_t, index=False)
 
 
 def _load_model(target: str, branch: str):
