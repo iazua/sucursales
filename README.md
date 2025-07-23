@@ -36,9 +36,9 @@ python train_models.py
 Los modelos resultantes se guardarán en la carpeta `models_sarima/`.
 
 
-Para generar pronosticos con Prophet de *T_VISITAS* y *T_AO* ejecuta:
+Para generar pronósticos con Prophet de *T_VISITAS* y *T_AO* ejecuta:
 ```bash
-python prophet_forecast_targets.py
+python prophet_forecast_targets.py --horizon_days 90 --changepoint_prior_scale 0.3
 ```
 Los resultados se guardarán en `models_prophet/`.
 
