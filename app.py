@@ -200,7 +200,7 @@ st.title("🔍 Predicción de Dotación y Efectividad por Hora")
 days_proj = st.slider(
     "Días a proyectar",
     min_value=1, max_value=HORIZON_DAYS,
-    value=min(30, HORIZON_DAYS), step=1,
+    value=HORIZON_DAYS, step=1,
 )
 sucursales = sorted(df["COD_SUC"].unique())
 cod_suc     = st.selectbox("Selecciona una sucursal", sucursales)

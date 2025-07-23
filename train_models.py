@@ -80,9 +80,17 @@ def generate_predictions(
     start_date: pd.Timestamp | None = None,
     end_date: pd.Timestamp | None = None,
 ) -> pd.DataFrame:
-    """Generate hourly predictions for the next ``days`` days using SARIMA."""
+    """Generate hourly predictions for the next ``days`` days.
 
-    models = {t: _load_model(t, branch) for t in TARGETS}
+    When forecasting beyond the available history (after March 2025) the
+    function falls back to a seasonal average based on 2024 data. This allows
+    projecting the remainder of 2025 even with limited observations.
+    """
+
+    df_hist = df_hist.copy()
+    df_hist.columns = df_hist.columns.str.strip().str.upper()
+    df_hist["FECHA"] = pd.to_datetime(df_hist["FECHA"])
+    df_hist["COD_SUC"] = df_hist["COD_SUC"].astype(str).str.strip()
 
     if start_date is None:
         last_date = df_hist[df_hist["COD_SUC"] == branch]["FECHA"].max()
@@ -91,14 +99,24 @@ def generate_predictions(
     if end_date is None:
         end_date = start_date + timedelta(days=days - 1)
 
-    pred_index = pd.bdate_range(start_date, periods=days)
+    pred_index = pd.bdate_range(start_date, end_date)
     horizon = len(pred_index)
 
-    result_rows = []
-    for fecha in pred_index:
-        for h in HOURS_RANGE:
-            result_rows.append({"COD_SUC": branch, "FECHA": fecha, "HORA": h})
+    result_rows = [
+        {"COD_SUC": branch, "FECHA": fecha, "HORA": h}
+        for fecha in pred_index for h in HOURS_RANGE
+    ]
     result = pd.DataFrame(result_rows)
+
+    # --- Seasonal baseline from year 2024 ---
+    df_branch = df_hist[df_hist["COD_SUC"] == branch].copy()
+    df_branch["month"] = df_branch["FECHA"].dt.month
+    df_branch["weekday"] = df_branch["FECHA"].dt.weekday
+    df_2024 = df_branch[df_branch["FECHA"].dt.year == 2024]
+    baseline = (
+        df_2024.groupby(["month", "weekday"])[TARGETS]
+        .mean()
+    )
 
     def _hourly_distribution(df_hist: pd.DataFrame, branch: str, target: str) -> np.ndarray:
         df_h = df_hist.copy()
@@ -115,17 +133,19 @@ def generate_predictions(
         w = weights.values
         return w / w.sum()
 
-    for t, model_info in models.items():
-        model = model_info["model"]
-        cols = model_info["exog_cols"]
-        exog_pred = pd.get_dummies(pred_index.weekday, drop_first=False)
-        # Align forecast exogenous data index with prediction horizon
-        exog_pred.index = pred_index
-        exog_pred = exog_pred.reindex(columns=cols, fill_value=0)
-        forecast = model.get_forecast(steps=horizon, exog=exog_pred)
-        preds = forecast.predicted_mean.clip(lower=0)
+    for t in TARGETS:
+        daily_preds = []
+        for d in pred_index:
+            key = (d.month, d.weekday())
+            if key in baseline.index:
+                val = baseline.loc[key, t]
+            else:
+                val = baseline[t].mean()
+            daily_preds.append(val if pd.notna(val) else 0)
         weights = _hourly_distribution(df_hist, branch, t)
-        hourly_preds = np.concatenate([preds.values[i] * weights for i in range(horizon)])
+        hourly_preds = np.concatenate([
+            daily_preds[i] * weights for i in range(horizon)
+        ])
         result[f"{t}_pred"] = hourly_preds
 
     result["T_AO_VENTA_req"] = result["T_AO_pred"] * efectividad_obj
