@@ -2,8 +2,8 @@
 
 Este proyecto contiene un conjunto de scripts y una aplicación web para predecir
 la dotación y otras métricas operacionales de distintas sucursales. La interfaz
-web está implementada con **Streamlit** y utiliza modelos entrenados con
-**LightGBM**.
+web está implementada con **Streamlit** y utiliza modelos de series de tiempo
+entrenados con **SARIMA**.
 
 ## Contenido del repositorio
 
@@ -11,7 +11,7 @@ web está implementada con **Streamlit** y utiliza modelos entrenados con
 - `train_models.py` – Script de entrenamiento de modelos por sucursal.
 - `preprocessing.py` y `utils.py` – Funciones auxiliares para
   procesamiento y modelamiento.
-- `models_lgbm/` – Modelos ya entrenados en formato `pkl`.
+- `models_sarima/` – Modelos ya entrenados en formato `pkl`.
 - `data/` – Archivos de datos de ejemplo (`DOTACION_EFECTIVIDAD.xlsx`,
   `regions.xlsx`, etc.).
 
@@ -32,7 +32,7 @@ Si deseas generar nuevamente los modelos, ejecuta:
 python train_models.py
 ```
 
-Los modelos resultantes se guardarán en la carpeta `models_lgbm/`.
+Los modelos resultantes se guardarán en la carpeta `models_sarima/`.
 
 ### Predicciones hasta fin de 2025
 
