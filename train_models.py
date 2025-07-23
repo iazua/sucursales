@@ -80,12 +80,15 @@ def generate_predictions(
     efectividad_obj: float = 0.6,
     start_date: pd.Timestamp | None = None,
     end_date: pd.Timestamp | None = None,
+    noise_scale: float = 0.0,
 ) -> pd.DataFrame:
     """Generate hourly predictions for the next ``days`` days.
 
     When forecasting beyond the available history (after March 2025) the
     function falls back to a seasonal average based on 2024 data. This allows
-    projecting the remainder of 2025 even with limited observations.
+    projecting the remainder of 2025 even with limited observations. If
+    ``noise_scale`` is greater than 0, Gaussian noise proportional to the
+    training residuals is added to produce more realistic volatility.
     """
 
     df_hist = df_hist.copy()
@@ -135,6 +138,7 @@ def generate_predictions(
         return w / w.sum()
 
     for t in TARGETS:
+        model = None
         try:
             mdl = _load_model(t, branch)
             model = mdl["model"]
@@ -155,6 +159,14 @@ def generate_predictions(
 
         if isinstance(daily_preds, pd.Series):
             daily_preds = daily_preds.values
+
+        if noise_scale > 0:
+            if model is not None:
+                resid_std = float(np.sqrt(getattr(model, "sigma2", 0.0)))
+            else:
+                resid_std = float(df_branch[t].std())
+            noise = np.random.normal(scale=resid_std * noise_scale, size=len(daily_preds))
+            daily_preds = np.clip(daily_preds + noise, a_min=0, a_max=None)
 
         weights = _hourly_distribution(df_hist, branch, t)
         hourly_preds = np.concatenate([
