@@ -140,15 +140,6 @@ def prepare_features(
     if 'T_VISITAS' in df.columns:
         df['spike_visitas'] = detect_spikes(df['T_VISITAS'])
 
-    # --- 5) Codificación cíclica e indicador pico ---
-    if include_time_features and 'HORA' in df.columns:
-        H = df['HORA']
-        df = df.assign(
-            sin_hour=np.sin(2 * np.pi * H / 24),
-            cos_hour=np.cos(2 * np.pi * H / 24),
-            is_peak=H.isin([11, 12, 13]).astype(int)
-        )
-
     # ------------------------------------
     # 6) Lista final de features
     # ------------------------------------
