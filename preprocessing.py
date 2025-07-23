@@ -1,213 +1,42 @@
 import pandas as pd
-import numpy as np
-import holidays
-from scipy.signal import find_peaks
 
 
 def assign_turno(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Asigna turnos basados en la hora del día (9-21).
-    1: 9-11, 2: 12-14, 3: 15-17, 4: 18-21, 0: fuera de rango.
-    """
-    bins  = [8, 11, 14, 17, 21]
+    """Assign a simple shift id based on the hour of day."""
+    bins = [8, 11, 14, 17, 21]
     labels = [1, 2, 3, 4]
-    df['turno'] = pd.cut(
-        df['HORA'], bins=bins, labels=labels,
-        right=True, include_lowest=True
-    )
-    df['turno'] = df['turno'].cat.add_categories([0]).fillna(0).astype(int)
-    return df
-
-def detect_spikes(series: pd.Series, prominence: float = 1.0) -> pd.Series:
-    """Devuelve un indicador binario de picos usando scipy.signal.find_peaks."""
-    if series.isna().all():
-        return pd.Series([0] * len(series), index=series.index)
-    values = series.fillna(0).to_numpy()
-    peaks, _ = find_peaks(values, prominence=prominence)
-    flags = np.zeros(len(values), dtype=int)
-    flags[peaks] = 1
-    return pd.Series(flags, index=series.index)
-
-
-def add_spike_label(
-    df: pd.DataFrame,
-    window_days: int = 30,
-    quantile: float = 0.95
-) -> pd.DataFrame:
-    """Genera una columna ``is_spike`` para cada sucursal.
-
-    Se marca como 1 cuando ``T_AO`` está por sobre el percentil especificado de
-    las últimas ``window_days``.
-    """
-    df = df.sort_values(["COD_SUC", "FECHA", "HORA"]).copy()
-
-    win = window_days * 24  # aproximación en horas
-    spike_flags = []
-    for _, g in df.groupby("COD_SUC"):
-        thresh = (
-            g["T_AO"].rolling(win, min_periods=1)
-            .quantile(quantile)
-            .shift(1)
-        )
-        spike_flags.append((g["T_AO"] > thresh).astype(int))
-
-    df["is_spike"] = pd.concat(spike_flags).sort_index()
-    return df
-
-def prepare_features(
-    df: pd.DataFrame,
-    target: str,
-    is_prediction: bool = False,
-    include_time_features: bool = False
-):
-    """
-    Genera un set de features enriquecido para entrenamiento o predicción.
-    - Temporal básico + festivos (Chile).
-    - Lags, medias móviles y desviaciones.
-    - Diferencias con mismo horario días atrás.
-    - Codificación cíclica de hora e indicador de pico.
-    """
     df = df.copy()
-    # ------------------------------------
-    # 1) FECHA a datetime, asignar turno
-    # ------------------------------------
-    df['FECHA'] = pd.to_datetime(df['FECHA'])
-    if 'COD_SUC' in df.columns:
-        df['COD_SUC'] = df['COD_SUC'].astype('category')
-    if 'HORA' in df.columns:
-        df['HORA'] = df['HORA'].fillna(-1)
-        df = assign_turno(df)
-    sort_cols = ['FECHA', 'HORA'] if 'HORA' in df.columns else ['FECHA']
-    df = df.sort_values(sort_cols).reset_index(drop=True)
-
-    # ------------------------------------
-    # 2) Features temporales básicas
-    # ------------------------------------
-    df['year']      = df['FECHA'].dt.year
-    df['month']     = df['FECHA'].dt.month
-    df['day']       = df['FECHA'].dt.day
-    df['weekday']   = df['FECHA'].dt.weekday
-    df['dayofyear'] = df['FECHA'].dt.dayofyear
-    df['weekofyear']= df['FECHA'].dt.isocalendar().week.astype(int)
-    df['is_weekend']= (df['weekday'] >= 5).astype(int)
-
-    # Festivos chilenos
-    years = range(df['FECHA'].dt.year.min()-1, df['FECHA'].dt.year.max()+2)
-    df['is_holiday'] = df['FECHA'].dt.date.isin(holidays.Chile(years=years)).astype(int)
-    # =============================================================================
-    # ❶  VARIABLES DE TIEMPO Y EVENTOS DE CALENDARIO
-    # =============================================================================
-    if include_time_features and "HORA" in df.columns:
-        # --- codificación cíclica de la hora -------------------------------------
-        H = df["HORA"]
-        df = df.assign(
-            sin_hour=np.sin(2 * np.pi * H / 24),
-            cos_hour=np.cos(2 * np.pi * H / 24),
-            is_peak=H.isin([11, 12, 13]).astype(int)
+    df["turno"] = (
+        pd.cut(
+            df["HORA"],
+            bins=bins,
+            labels=labels,
+            include_lowest=True,
+            right=True,
         )
+        .cat.add_categories([0])
+        .fillna(0)
+        .astype(int)
+    )
+    return df
 
-        # --- variables de calendario --------------------------------------------
-        D = df["FECHA"]
-        df = df.assign(
-            dayofweek=D.dt.dayofweek,  # 0 = lunes
-            is_weekend=(D.dt.dayofweek >= 5).astype(int),
-            is_month_end=D.dt.is_month_end.astype(int),
-            is_month_start=D.dt.is_month_start.astype(int),
-            is_payday=D.dt.day.isin([15, 30, 31]).astype(int)
-        )
 
-        # Feriados de Chile (opcional, requiere workalendar)
-        try:
-            from workalendar.america import Chile
-            cal = Chile()
-            df["is_holiday_CL"] = D.dt.date.map(cal.is_holiday).astype(int)
-        except Exception:
-            df["is_holiday_CL"] = 0  # fallback si no está workalendar
+def basic_preprocess(df: pd.DataFrame) -> pd.DataFrame:
+    """Minimal preprocessing used for training and inference."""
+    df = df.copy()
+    df.columns = df.columns.str.strip().str.upper()
+    df["FECHA"] = pd.to_datetime(df["FECHA"])
+    df["weekday"] = df["FECHA"].dt.weekday
+    df["month"] = df["FECHA"].dt.month
+    df = assign_turno(df)
+    df["COD_SUC"] = df["COD_SUC"].astype("category").cat.codes
+    return df
 
-    # ------------------------------------
-    # 3) Lags, rolling mean y rolling std
-    # ------------------------------------
-    lag_cols = ["T_VISITAS", "T_AO", "T_AO_VENTA", "DOTACION"]
-    lags     = [1,2,3,6,12,24,168]
-    YEAR_HOURS  = 24 * 365  # aproximación a un año
-    MONTH_HOURS = 24 * 30   # aproximación a un mes
-    lags.append(YEAR_HOURS)
 
-    lag_data = {}
-    for col in lag_cols:
-        if col not in df.columns:
-            df[col] = np.nan
-        for lag in lags:
-            lag_data[f"{col}_lag{lag}"] = df[col].shift(lag)
-            lag_data[f"{col}_roll{lag}_mean"] = (
-                df[col].shift(1).rolling(lag, min_periods=1).mean()
-            )
-            lag_data[f"{col}_roll{lag}_std"] = (
-                df[col].shift(1).rolling(lag, min_periods=1).std().fillna(0)
-            )
-        lag_data[f"{col}_prev_year_month_mean"] = (
-            df[col].shift(YEAR_HOURS).rolling(MONTH_HOURS, min_periods=1).mean()
-        )
-
-    df = pd.concat([df, pd.DataFrame(lag_data, index=df.index)], axis=1)
-    df = df.copy()  # defragment frame
-
-    # ------------------------------------
-    # 4) Diferencias con días anteriores
-    # ------------------------------------
-    if 'T_VISITAS' in df.columns:
-        df['diff_24h'] = df['T_VISITAS'] - df['T_VISITAS'].shift(24)
-        df['diff_168h']= df['T_VISITAS'] - df['T_VISITAS'].shift(168)
-    if 'T_AO' in df.columns:
-        df['ao_diff_24h'] = df['T_AO'] - df['T_AO'].shift(24)
-        df['ao_diff_168h']= df['T_AO'] - df['T_AO'].shift(168)
-
-    # Indicadores de picos para T_AO y T_VISITAS
-    if 'T_AO' in df.columns:
-        df['spike_ao'] = detect_spikes(df['T_AO'])
-    if 'T_VISITAS' in df.columns:
-        df['spike_visitas'] = detect_spikes(df['T_VISITAS'])
-
-    # ------------------------------------
-    # 6) Lista final de features
-    # ------------------------------------
-    features = [
-        # Temporales
-        "year","month","day","weekday","dayofyear","weekofyear",
-        "is_weekend","is_holiday","COD_SUC",
-        # Lags y rolls (se añaden dinámicamente)
-    ]
-    # Añadimos dinámicamente todas las columnas generadas con *_lag*, *_roll* y *_std*
-    features += [c for c in df.columns if any(s in c for s in ["_lag","roll"])]
-    # Columnas que utilizan información del mismo mes del año anterior
-    features += [c for c in df.columns if "prev_year" in c]
-
-    # Diferencias
-    features += [c for c in df.columns if any(s in c for s in ["diff_24h","diff_168h"])]
-
-    # Indicadores de picos
-    features += [c for c in df.columns if c in ['spike_ao', 'spike_visitas']]
-
-    # Time features opcionales
-    if include_time_features:
-        features += ['turno', 'HORA', 'sin_hour', 'cos_hour', 'is_peak']
-
-    # ------------------------------------
-    # 7) Preparar X e y
-    # ------------------------------------
-    # Asegurar que existan todas las features
-    for feat in features:
-        if feat not in df.columns:
-            df[feat] = 0
-
-    if is_prediction:
-        X = df[features].fillna(0).copy()
-        y = pd.Series([np.nan]*len(df), index=df.index)
-    else:
-        if target not in df.columns:
-            raise ValueError(f"Objetivo '{target}' no encontrado en DataFrame")
-        valid = df[target].notna()
-        X = df.loc[valid, features].fillna(0).copy()
-        y = df.loc[valid, target].copy()
-
+def prepare_features(df: pd.DataFrame, target: str):
+    """Return feature matrix X and target y for the given variable."""
+    df_proc = basic_preprocess(df)
+    features = ["HORA", "weekday", "month", "turno", "COD_SUC"]
+    X = df_proc[features].fillna(0)
+    y = df_proc[target].fillna(0)
     return X, y
