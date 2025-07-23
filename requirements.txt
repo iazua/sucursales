@@ -3,10 +3,9 @@ pandas
 numpy
 plotly
 pydeck
-lightgbm
 scikit-learn
+xgboost
 joblib
-statsmodels
 scipy
 holidays
 workalendar

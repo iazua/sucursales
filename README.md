@@ -3,7 +3,7 @@
 Este proyecto contiene un conjunto de scripts y una aplicación web para predecir
 la dotación y otras métricas operacionales de distintas sucursales. La interfaz
 web está implementada con **Streamlit** y utiliza modelos de series de tiempo
-entrenados con **SARIMA**.
+entrenados con **XGBoost** y validación cruzada temporal.
 
 ## Contenido del repositorio
 
@@ -11,7 +11,7 @@ entrenados con **SARIMA**.
 - `train_models.py` – Script de entrenamiento de modelos por sucursal.
 - `preprocessing.py` y `utils.py` – Funciones auxiliares para
   procesamiento y modelamiento.
-- `models_sarima/` – Modelos ya entrenados en formato `pkl`.
+- `models_xgb/` – Modelos ya entrenados en formato `pkl`.
 - `data/` – Archivos de datos de ejemplo (`DOTACION_EFECTIVIDAD.xlsx`,
   `regions.xlsx`, etc.).
 
@@ -32,7 +32,9 @@ Si deseas generar nuevamente los modelos, ejecuta:
 python train_models.py
 ```
 
-Los modelos resultantes se guardarán en la carpeta `models_sarima/`.
+Los modelos resultantes se guardarán en la carpeta `models_xgb/`.
+Durante el entrenamiento se aplica **validación cruzada temporal** para
+ajustar hiperparámetros de XGBoost.
 
 ### Predicciones hasta fin de 2025
 
