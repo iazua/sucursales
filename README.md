@@ -70,6 +70,5 @@ correspondientes. Para publicar la app en línea puedes usar servicios como
 **Streamlit Community Cloud** o cualquier plataforma que ejecute aplicaciones
 Python (Heroku, GCP, AWS, etc.).
 
-## Licencia
 
-Este proyecto se distribuye sin garantía y con fines demostrativos.
+Ignacio Azua
