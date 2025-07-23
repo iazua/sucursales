@@ -1,28 +1,9 @@
 import os
 import pandas as pd
-from prophet import Prophet
+from preprocessing import forecast_target_prophet
 
 PROPHET_DIR = "models_prophet"
 TARGETS = ["T_VISITAS", "T_AO"]
-
-
-def _forecast_branch(df_branch: pd.DataFrame, target: str, horizon_days: int, cp_scale: float = 0.5) -> pd.DataFrame:
-    df_prophet = df_branch[["FECHA", target]].rename(columns={"FECHA": "ds", target: "y"}).copy()
-    df_prophet["ds"] = pd.to_datetime(df_prophet["ds"])
-
-    model = Prophet(
-        daily_seasonality=True,
-        weekly_seasonality=True,
-        yearly_seasonality=True,
-        changepoint_prior_scale=cp_scale,
-    )
-    model.add_country_holidays(country_name="CL")
-    model.fit(df_prophet)
-
-    future = model.make_future_dataframe(periods=horizon_days)
-    forecast = model.predict(future)
-
-    return forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(horizon_days)
 
 
 def main(horizon_days: int = 365, changepoint_prior_scale: float = 0.5) -> None:
@@ -36,7 +17,13 @@ def main(horizon_days: int = 365, changepoint_prior_scale: float = 0.5) -> None:
     for branch in df["COD_SUC"].unique():
         df_branch = df[df["COD_SUC"] == branch]
         for target in TARGETS:
-            forecast = _forecast_branch(df_branch, target, horizon_days, changepoint_prior_scale)
+            df_t = df_branch[["FECHA", target]]
+            forecast = forecast_target_prophet(
+                df_t,
+                target=target,
+                horizon_days=horizon_days,
+                changepoint_prior_scale=changepoint_prior_scale,
+            )
             fname = f"{branch}_{target}_forecast.csv"
             forecast.to_csv(os.path.join(PROPHET_DIR, fname), index=False)
 
