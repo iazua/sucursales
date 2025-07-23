@@ -135,14 +135,27 @@ def generate_predictions(
         return w / w.sum()
 
     for t in TARGETS:
-        daily_preds = []
-        for d in pred_index:
-            key = (d.month, d.weekday())
-            if key in baseline.index:
-                val = baseline.loc[key, t]
-            else:
-                val = baseline[t].mean()
-            daily_preds.append(val if pd.notna(val) else 0)
+        try:
+            mdl = _load_model(t, branch)
+            model = mdl["model"]
+            exog_cols = mdl["exog_cols"]
+            exog_future = pd.get_dummies(pred_index.weekday, drop_first=False)
+            exog_future = exog_future.astype(float).reindex(columns=exog_cols, fill_value=0.0)
+            exog_future.index = pred_index
+            daily_preds = model.forecast(steps=horizon, exog=exog_future)
+        except FileNotFoundError:
+            daily_preds = []
+            for d in pred_index:
+                key = (d.month, d.weekday())
+                if key in baseline.index:
+                    val = baseline.loc[key, t]
+                else:
+                    val = baseline[t].mean()
+                daily_preds.append(val if pd.notna(val) else 0)
+
+        if isinstance(daily_preds, pd.Series):
+            daily_preds = daily_preds.values
+
         weights = _hourly_distribution(df_hist, branch, t)
         hourly_preds = np.concatenate([
             daily_preds[i] * weights for i in range(horizon)
