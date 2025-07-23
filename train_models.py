@@ -7,6 +7,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 
 
+
+
 MODEL_DIR = "models_sarima"
 TARGETS = ["T_VISITAS", "T_AO"]
 HOURS_RANGE = list(range(9, 22))
@@ -26,6 +28,9 @@ def train_models(df: pd.DataFrame) -> None:
     df["FECHA"] = pd.to_datetime(df["FECHA"])
     df["COD_SUC"] = df["COD_SUC"].astype(str).str.strip()
 
+    # Keep only Monday-Friday records
+    df = df[df["FECHA"].dt.weekday < 5]
+
     # Aggregate at daily level
     df_daily = (
         df.groupby(["COD_SUC", "FECHA"])[TARGETS]
@@ -38,22 +43,25 @@ def train_models(df: pd.DataFrame) -> None:
         df_branch = (
             df_daily[df_daily["COD_SUC"] == branch]
             .set_index("FECHA")
-            .asfreq("D")
+            .asfreq("B")
             .fillna(0)
         )
+
+        exog = pd.get_dummies(df_branch.index.weekday, drop_first=False)
 
         for target in TARGETS:
             series = df_branch[target]
             model = SARIMAX(
                 series,
+                exog=exog,
                 order=(1, 1, 1),
-                seasonal_order=(1, 1, 1, 7),
+                seasonal_order=(1, 1, 1, 5),
                 enforce_stationarity=False,
                 enforce_invertibility=False,
             ).fit(disp=False)
 
             fname = f"sarima_{target}_{branch}.pkl"
-            joblib.dump(model, os.path.join(MODEL_DIR, fname))
+            joblib.dump({"model": model, "exog_cols": exog.columns.tolist()}, os.path.join(MODEL_DIR, fname))
 
 
 def _load_model(target: str, branch: str):
@@ -81,8 +89,8 @@ def generate_predictions(
     if end_date is None:
         end_date = start_date + timedelta(days=days - 1)
 
-    horizon = (end_date - start_date).days + 1
-    pred_index = pd.date_range(start_date, periods=horizon, freq="D")
+    pred_index = pd.bdate_range(start_date, periods=days)
+    horizon = len(pred_index)
 
     result_rows = []
     for fecha in pred_index:
@@ -90,10 +98,31 @@ def generate_predictions(
             result_rows.append({"COD_SUC": branch, "FECHA": fecha, "HORA": h})
     result = pd.DataFrame(result_rows)
 
-    for t, model in models.items():
-        forecast = model.get_forecast(steps=horizon)
+    def _hourly_distribution(df_hist: pd.DataFrame, branch: str, target: str) -> np.ndarray:
+        df_h = df_hist.copy()
+        df_h.columns = df_h.columns.str.strip().str.upper()
+        df_h["FECHA"] = pd.to_datetime(df_h["FECHA"])
+        df_h = df_h[df_h["COD_SUC"].astype(str).str.strip() == branch]
+        df_h = df_h[df_h["FECHA"].dt.weekday < 5]
+        daily_totals = df_h.groupby("FECHA")[target].transform("sum")
+        df_h = df_h[daily_totals > 0]
+        df_h["share"] = df_h[target] / daily_totals
+        weights = (
+            df_h.groupby("HORA")["share"].mean().reindex(HOURS_RANGE, fill_value=1/len(HOURS_RANGE))
+        )
+        w = weights.values
+        return w / w.sum()
+
+    for t, model_info in models.items():
+        model = model_info["model"]
+        cols = model_info["exog_cols"]
+        exog_pred = pd.get_dummies(pred_index.weekday, drop_first=False)
+        exog_pred = exog_pred.reindex(columns=cols, fill_value=0)
+        forecast = model.get_forecast(steps=horizon, exog=exog_pred)
         preds = forecast.predicted_mean.clip(lower=0)
-        result[f"{t}_pred"] = np.repeat(preds.values, len(HOURS_RANGE))
+        weights = _hourly_distribution(df_hist, branch, t)
+        hourly_preds = np.concatenate([preds.values[i] * weights for i in range(horizon)])
+        result[f"{t}_pred"] = hourly_preds
 
     result["T_AO_VENTA_req"] = result["T_AO_pred"] * efectividad_obj
     result["P_EFECTIVIDAD_req"] = np.where(
