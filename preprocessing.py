@@ -72,6 +72,8 @@ def prepare_features(
     # 1) FECHA a datetime, asignar turno
     # ------------------------------------
     df['FECHA'] = pd.to_datetime(df['FECHA'])
+    if 'COD_SUC' in df.columns:
+        df['COD_SUC'] = df['COD_SUC'].astype('category')
     if 'HORA' in df.columns:
         df['HORA'] = df['HORA'].fillna(-1)
         df = assign_turno(df)
@@ -172,7 +174,7 @@ def prepare_features(
     features = [
         # Temporales
         "year","month","day","weekday","dayofyear","weekofyear",
-        "is_weekend","is_holiday",
+        "is_weekend","is_holiday","COD_SUC",
         # Lags y rolls (se añaden dinámicamente)
     ]
     # Añadimos dinámicamente todas las columnas generadas con *_lag*, *_roll* y *_std*
