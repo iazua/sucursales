@@ -9,6 +9,7 @@ entrenados con **SARIMA**.
 
 - `app.py` – Aplicación Streamlit para visualizar pronósticos y métricas.
 - `train_models.py` – Script de entrenamiento de modelos por sucursal.
+- `prophet_forecast_targets.py` – Pronósticos Prophet para visitas y acepta oferta.
 - `preprocessing.py` y `utils.py` – Funciones auxiliares para
   procesamiento y modelamiento.
 - `models_sarima/` – Modelos ya entrenados en formato `pkl`.
@@ -33,6 +34,13 @@ python train_models.py
 ```
 
 Los modelos resultantes se guardarán en la carpeta `models_sarima/`.
+
+
+Para generar pronosticos con Prophet de *T_VISITAS* y *T_AO* ejecuta:
+```bash
+python prophet_forecast_targets.py
+```
+Los resultados se guardarán en `models_prophet/`.
 
 ### Predicciones hasta fin de 2025
 

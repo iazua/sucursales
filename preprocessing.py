@@ -101,3 +101,39 @@ def forecast_dotacion_prophet(
         result["yhat"] += noise
 
     return result
+
+
+def forecast_target_prophet(
+    df_target: pd.DataFrame,
+    target: str,
+    model: Prophet | None = None,
+    horizon_days: int = 30,
+    noise_scale: float = 0.0,
+    changepoint_prior_scale: float = 0.5,
+) -> pd.DataFrame:
+    """Forecast a generic target (e.g. T_VISITAS, T_AO) using Prophet."""
+    df_prophet = (
+        df_target.rename(columns={"FECHA": "ds", target: "y"})
+        .copy()
+    )
+    df_prophet["ds"] = pd.to_datetime(df_prophet["ds"])
+
+    if model is None:
+        model = Prophet(
+            daily_seasonality=True,
+            weekly_seasonality=True,
+            yearly_seasonality=True,
+            changepoint_prior_scale=changepoint_prior_scale,
+        )
+        model.add_country_holidays(country_name="CL")
+        model.fit(df_prophet)
+
+    future = model.make_future_dataframe(periods=horizon_days)
+    forecast = model.predict(future)
+    result = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(horizon_days).reset_index(drop=True)
+
+    if noise_scale > 0:
+        noise = np.random.normal(scale=noise_scale, size=len(result))
+        result["yhat"] += noise
+
+    return result
