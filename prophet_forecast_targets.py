@@ -1,4 +1,5 @@
 import os
+import argparse
 import pandas as pd
 from prophet import Prophet
 
@@ -42,4 +43,23 @@ def main(horizon_days: int = 365, changepoint_prior_scale: float = 0.5) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Generate Prophet forecasts for T_VISITAS and T_AO"
+    )
+    parser.add_argument(
+        "--horizon_days",
+        type=int,
+        default=365,
+        help="Number of days to forecast",
+    )
+    parser.add_argument(
+        "--changepoint_prior_scale",
+        type=float,
+        default=0.5,
+        help="Prophet changepoint prior scale",
+    )
+    args = parser.parse_args()
+    main(
+        horizon_days=args.horizon_days,
+        changepoint_prior_scale=args.changepoint_prior_scale,
+    )
