@@ -48,6 +48,7 @@ def train_models(df: pd.DataFrame) -> None:
         )
 
         exog = pd.get_dummies(df_branch.index.weekday, drop_first=False)
+        exog = exog.astype(float)  # Ensure numeric dtype to avoid bool diff issue
         # Ensure exogenous variables use the same index as the target series
         exog.index = df_branch.index
 
