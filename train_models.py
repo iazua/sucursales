@@ -48,6 +48,8 @@ def train_models(df: pd.DataFrame) -> None:
         )
 
         exog = pd.get_dummies(df_branch.index.weekday, drop_first=False)
+        # Ensure exogenous variables use the same index as the target series
+        exog.index = df_branch.index
 
         for target in TARGETS:
             series = df_branch[target]
@@ -117,6 +119,8 @@ def generate_predictions(
         model = model_info["model"]
         cols = model_info["exog_cols"]
         exog_pred = pd.get_dummies(pred_index.weekday, drop_first=False)
+        # Align forecast exogenous data index with prediction horizon
+        exog_pred.index = pred_index
         exog_pred = exog_pred.reindex(columns=cols, fill_value=0)
         forecast = model.get_forecast(steps=horizon, exog=exog_pred)
         preds = forecast.predicted_mean.clip(lower=0)
