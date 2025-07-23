@@ -1,15 +1,18 @@
 import os
+import argparse
 from datetime import timedelta
 import joblib
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+from preprocessing import forecast_dotacion_prophet
 
 
 
 
 
 MODEL_DIR = "models_sarima"
+PROPHET_DIR = "models_prophet"
 TARGETS = ["T_VISITAS", "T_AO"]
 HOURS_RANGE = list(range(9, 22))
 
@@ -19,9 +22,15 @@ def load_data(path: str = "data/DOTACION_EFECTIVIDAD.xlsx") -> pd.DataFrame:
     return pd.read_excel(path)
 
 
-def train_models(df: pd.DataFrame) -> None:
-    """Train a SARIMA model for each branch and target."""
+def train_models(
+    df: pd.DataFrame,
+    horizon_days: int = 365,
+    noise_scale: float = 0.0,
+    changepoint_prior_scale: float = 0.5,
+) -> None:
+    """Train a SARIMA model for each branch and target and save Prophet forecasts."""
     os.makedirs(MODEL_DIR, exist_ok=True)
+    os.makedirs(PROPHET_DIR, exist_ok=True)
 
     df = df.copy()
     df.columns = df.columns.str.strip().str.upper()
@@ -65,6 +74,21 @@ def train_models(df: pd.DataFrame) -> None:
 
             fname = f"sarima_{target}_{branch}.pkl"
             joblib.dump({"model": model, "exog_cols": exog.columns.tolist()}, os.path.join(MODEL_DIR, fname))
+        # --- Prophet forecast for DOTACION ---
+        df_dot = (
+            df[df["COD_SUC"] == branch][["FECHA", "DOTACION"]]
+            .groupby("FECHA", as_index=False)
+            .mean()
+            .rename(columns={"FECHA": "fecha", "DOTACION": "dotacion"})
+        )
+        prophet_forecast = forecast_dotacion_prophet(
+            df_dot,
+            horizon_days=horizon_days,
+            noise_scale=noise_scale,
+            changepoint_prior_scale=changepoint_prior_scale,
+        )
+        forecast_path = os.path.join(PROPHET_DIR, f"{branch}_forecast.csv")
+        prophet_forecast.to_csv(forecast_path, index=False)
 
 
 def _load_model(target: str, branch: str):
@@ -185,8 +209,16 @@ def generate_predictions(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train SARIMA models and Prophet forecasts")
+    parser.add_argument("--horizon_days", type=int, default=365, help="Days to forecast with Prophet")
+    parser.add_argument("--noise_scale", type=float, default=0.0, help="Gaussian noise scale for Prophet forecast")
+    parser.add_argument("--changepoint_prior_scale", type=float, default=0.5, help="Prophet changepoint prior scale")
+    args = parser.parse_args()
+
     data = load_data()
-    train_models(data)
-    branch = str(data["COD_SUC"].iloc[0])
-    preds = generate_predictions(data, branch)
-    print(preds.head())
+    train_models(
+        data,
+        horizon_days=args.horizon_days,
+        noise_scale=args.noise_scale,
+        changepoint_prior_scale=args.changepoint_prior_scale,
+    )

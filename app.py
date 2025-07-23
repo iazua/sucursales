@@ -196,6 +196,8 @@ st.pydeck_chart(pdk.Deck(
 
 st.title("🔍 Predicción de Dotación y Efectividad por Hora")
 
+method = st.sidebar.radio("Método", ["SARIMA", "Prophet"])
+
 # --- CONTROL DE HORIZONTE DE PROYECCIÓN ---
 days_proj = st.slider(
     "Días a proyectar",
@@ -247,12 +249,47 @@ def forecast_fast(df_all: pd.DataFrame,
 
 
 # ---------- LLAMADA ----------
-df_pred = forecast_fast(
-    df,                  # dataset completo
-    cod_suc,
-    efectividad_obj,
-    days_proj,
-)
+if method == "SARIMA":
+    df_pred = forecast_fast(
+        df,
+        cod_suc,
+        efectividad_obj,
+        days_proj,
+    )
+else:
+    path_csv = os.path.join("models_prophet", f"{cod_suc}_forecast.csv")
+    if os.path.exists(path_csv):
+        df_pred = pd.read_csv(path_csv)
+        df_pred["ds"] = pd.to_datetime(df_pred["ds"])
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df_pred["ds"], y=df_pred["yhat"], name="yhat"))
+        fig.add_trace(
+            go.Scatter(
+                x=df_pred["ds"],
+                y=df_pred["yhat_upper"],
+                line=dict(width=0),
+                showlegend=False,
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=df_pred["ds"],
+                y=df_pred["yhat_lower"],
+                fill="tonexty",
+                line=dict(width=0),
+                showlegend=False,
+            )
+        )
+        fig.update_layout(
+            title="Pronóstico Prophet",
+            paper_bgcolor="#1a0033",
+            plot_bgcolor="#1a0033",
+            font_color="#FFFFFF",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.error("Pronóstico Prophet no encontrado")
+    st.stop()
 
 
 

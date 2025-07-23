@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+from prophet import Prophet
 
 
 def assign_turno(df: pd.DataFrame) -> pd.DataFrame:
@@ -40,3 +42,62 @@ def prepare_features(df: pd.DataFrame, target: str):
     X = df_proc[features].fillna(0)
     y = df_proc[target].fillna(0)
     return X, y
+
+
+def forecast_dotacion_prophet(
+    df_dotacion: pd.DataFrame,
+    model: Prophet | None = None,
+    horizon_days: int = 30,
+    noise_scale: float = 0.0,
+    changepoint_prior_scale: float = 0.5,
+) -> pd.DataFrame:
+    """Forecast dotacion using Facebook Prophet.
+
+    Parameters
+    ----------
+    df_dotacion : pd.DataFrame
+        DataFrame with columns ``['fecha', 'dotacion']``.
+    model : Prophet, optional
+        Pre-initialized Prophet model. If ``None`` a new model is created.
+    horizon_days : int, default 30
+        Number of days to forecast into the future.
+    noise_scale : float, default 0.0
+        Standard deviation of Gaussian noise added to ``yhat``.
+    changepoint_prior_scale : float, default 0.5
+        Value for Prophet's ``changepoint_prior_scale`` when creating a new model.
+
+    Returns
+    -------
+    pd.DataFrame
+        Forecast with columns ``['ds','yhat','yhat_lower','yhat_upper']`` for the
+        forecast horizon.
+    """
+
+    df_prophet = (
+        df_dotacion.rename(columns={"fecha": "ds", "dotacion": "y"})
+        .copy()
+    )
+    df_prophet["ds"] = pd.to_datetime(df_prophet["ds"])
+
+    if model is None:
+        model = Prophet(
+            daily_seasonality=True,
+            weekly_seasonality=True,
+            yearly_seasonality=True,
+            changepoint_prior_scale=changepoint_prior_scale,
+        )
+        model.add_country_holidays(country_name="CL")
+        model.fit(df_prophet)
+
+    future = model.make_future_dataframe(periods=horizon_days)
+    forecast = model.predict(future)
+
+    result = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(
+        horizon_days
+    ).reset_index(drop=True)
+
+    if noise_scale > 0:
+        noise = np.random.normal(scale=noise_scale, size=len(result))
+        result["yhat"] += noise
+
+    return result

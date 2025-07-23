@@ -11,3 +11,4 @@ scipy
 holidays
 workalendar
 openpyxl
+prophet
