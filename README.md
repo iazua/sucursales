@@ -71,4 +71,6 @@ correspondientes. Para publicar la app en línea puedes usar servicios como
 Python (Heroku, GCP, AWS, etc.).
 
 
-Ignacio Azua
+
+
+**Ignacio Azua**
