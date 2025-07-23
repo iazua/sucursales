@@ -16,6 +16,8 @@ from plotly.subplots import make_subplots
 HOURS_RANGE = list(range(9, 22))
 # Fecha límite para las proyecciones automáticas
 PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
+# Valor por defecto para el horizonte de proyección (días)
+DEFAULT_FORECAST_DAYS = 306
 
 # --- CONFIGURACIÓN INICIAL ---
 st.set_page_config(page_title="Predicción de Dotación Óptima (Hourly)", layout="wide")
@@ -414,7 +416,7 @@ st.title("🔍 Predicción de Dotación y Efectividad por Hora")
 days_proj = st.slider(
     "Días a proyectar",
     min_value=1, max_value=HORIZON_DAYS,
-    value=min(30, HORIZON_DAYS), step=1,
+    value=min(DEFAULT_FORECAST_DAYS, HORIZON_DAYS), step=1,
 )
 sucursales = sorted(df["COD_SUC"].unique())
 cod_suc     = st.selectbox("Selecciona una sucursal", sucursales)

@@ -4,6 +4,7 @@ import joblib
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+from pandas.tseries.frequencies import to_offset
 
 
 
@@ -62,6 +63,43 @@ def _load_model(target: str, branch: str):
     return joblib.load(path)
 
 
+def _forecast_from_reference_year(
+    df_hist: pd.DataFrame,
+    branch: str,
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+) -> pd.DataFrame:
+    """Naively replicate 2024 values for the requested range."""
+    df_branch = df_hist[df_hist["COD_SUC"] == branch].copy()
+    df_branch["FECHA"] = pd.to_datetime(df_branch["FECHA"])
+    df_branch = df_branch.set_index(["FECHA", "HORA"])
+    df_2024 = df_branch[df_branch.index.get_level_values("FECHA").year == 2024]
+
+    result_rows: list[dict] = []
+    pred_dates = pd.date_range(start_date, end_date, freq="D")
+    for fecha in pred_dates:
+        ref_fecha = fecha - to_offset("1Y")
+        for h in HOURS_RANGE:
+            try:
+                vals = df_2024.loc[(ref_fecha, h)]
+                t_vis = vals.get("T_VISITAS", 0)
+                t_ao = vals.get("T_AO", 0)
+            except KeyError:
+                t_vis = 0
+                t_ao = 0
+            result_rows.append(
+                {
+                    "COD_SUC": branch,
+                    "FECHA": fecha,
+                    "HORA": h,
+                    "T_VISITAS_pred": t_vis,
+                    "T_AO_pred": t_ao,
+                }
+            )
+
+    return pd.DataFrame(result_rows)
+
+
 def generate_predictions(
     df_hist: pd.DataFrame,
     branch: str,
@@ -70,7 +108,12 @@ def generate_predictions(
     start_date: pd.Timestamp | None = None,
     end_date: pd.Timestamp | None = None,
 ) -> pd.DataFrame:
-    """Generate hourly predictions for the next ``days`` days using SARIMA."""
+    """Generate hourly predictions for the next ``days`` days.
+
+    If the requested range is beyond the available history (e.g. predicting all
+    of 2025 with data only through March 2025), the values from the same period
+    in 2024 are used as a fallback reference.
+    """
 
     models = {t: _load_model(t, branch) for t in TARGETS}
 
@@ -81,19 +124,23 @@ def generate_predictions(
     if end_date is None:
         end_date = start_date + timedelta(days=days - 1)
 
-    horizon = (end_date - start_date).days + 1
-    pred_index = pd.date_range(start_date, periods=horizon, freq="D")
+    last_date = df_hist[df_hist["COD_SUC"] == branch]["FECHA"].max()
+    if start_date > last_date:
+        result = _forecast_from_reference_year(df_hist, branch, start_date, end_date)
+    else:
+        horizon = (end_date - start_date).days + 1
+        pred_index = pd.date_range(start_date, periods=horizon, freq="D")
 
-    result_rows = []
-    for fecha in pred_index:
-        for h in HOURS_RANGE:
-            result_rows.append({"COD_SUC": branch, "FECHA": fecha, "HORA": h})
-    result = pd.DataFrame(result_rows)
+        result_rows = []
+        for fecha in pred_index:
+            for h in HOURS_RANGE:
+                result_rows.append({"COD_SUC": branch, "FECHA": fecha, "HORA": h})
+        result = pd.DataFrame(result_rows)
 
-    for t, model in models.items():
-        forecast = model.get_forecast(steps=horizon)
-        preds = forecast.predicted_mean.clip(lower=0)
-        result[f"{t}_pred"] = np.repeat(preds.values, len(HOURS_RANGE))
+        for t, model in models.items():
+            forecast = model.get_forecast(steps=horizon)
+            preds = forecast.predicted_mean.clip(lower=0)
+            result[f"{t}_pred"] = np.repeat(preds.values, len(HOURS_RANGE))
 
     result["T_AO_VENTA_req"] = result["T_AO_pred"] * efectividad_obj
     result["P_EFECTIVIDAD_req"] = np.where(
