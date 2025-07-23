@@ -45,6 +45,9 @@ La aplicación utiliza un método vectorizado que acelera la inferencia para
 horizontes extensos y las proyecciones para el periodo abril–diciembre de 2025
 se basan en los promedios históricos de 2024.
 
+El módulo `generate_predictions` ahora permite añadir ruido gaussiano opcional
+(parámetro `noise_scale`) para simular la volatilidad observada en la data real.
+
 ## Ejecución de la aplicación
 
 Para lanzar la aplicación en modo local:
