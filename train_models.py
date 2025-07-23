@@ -11,6 +11,10 @@ from pandas.tseries.frequencies import to_offset
 MODEL_DIR = "models_sarima"
 TARGETS = ["T_VISITAS", "T_AO"]
 HOURS_RANGE = list(range(9, 22))
+# Horizon used when no specific range is provided
+DEFAULT_FORECAST_DAYS = 306
+# Final date used for default forecasts
+PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
 
 
 def load_data(path: str = "data/DOTACION_EFECTIVIDAD.xlsx") -> pd.DataFrame:
@@ -103,7 +107,7 @@ def _forecast_from_reference_year(
 def generate_predictions(
     df_hist: pd.DataFrame,
     branch: str,
-    days: int = 7,
+    days: int = DEFAULT_FORECAST_DAYS,
     efectividad_obj: float = 0.6,
     start_date: pd.Timestamp | None = None,
     end_date: pd.Timestamp | None = None,
@@ -122,13 +126,15 @@ def generate_predictions(
         start_date = pd.to_datetime(last_date) + timedelta(days=1)
 
     if end_date is None:
-        end_date = start_date + timedelta(days=days - 1)
+        end_date = PREDICTION_END_DATE
+
+    days = (end_date - start_date).days + 1
 
     last_date = df_hist[df_hist["COD_SUC"] == branch]["FECHA"].max()
     if start_date > last_date:
         result = _forecast_from_reference_year(df_hist, branch, start_date, end_date)
     else:
-        horizon = (end_date - start_date).days + 1
+        horizon = days
         pred_index = pd.date_range(start_date, periods=horizon, freq="D")
 
         result_rows = []

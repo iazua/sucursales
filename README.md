@@ -37,9 +37,12 @@ Los modelos resultantes se guardarán en la carpeta `models_sarima/`.
 ### Predicciones hasta fin de 2025
 
 El script `train_models.py` permite especificar un rango de fechas para la
-generación de pronósticos. De forma predeterminada se entrenan los modelos y se
-producen proyecciones desde el día siguiente al último registro disponible hasta
-el **31 de diciembre de 2025** (306 días si la base llega a marzo de 2025).
+generación de pronósticos. Si no se indica otro periodo, los modelos se
+entrenan y se generan proyecciones desde el día siguiente al último registro
+disponible hasta el **31 de diciembre de 2025** (306 días si la base llega a
+marzo de 2025).
+El horizonte por defecto corresponde al valor de la constante
+`DEFAULT_FORECAST_DAYS` definida en `train_models.py`.
 
 Para este escenario de datos limitados, las proyecciones de 2025 toman como
 referencia los valores observados en 2024.
