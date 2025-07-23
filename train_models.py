@@ -75,7 +75,8 @@ def train_model_for_branch(
         target: str,
         param_dist: dict | None = None,
         n_iter: int = 25,
-        early_stopping_rounds: int = 30
+        early_stopping_rounds: int = 30,
+        global_model: bool = False
 ) -> lgb.LGBMRegressor:
     """
     Entrena un modelo LightGBM para una sucursal y un target.
@@ -92,6 +93,7 @@ def train_model_for_branch(
         is_prediction=False,
         include_time_features=True
     )
+    cat_feats = ["COD_SUC"] if "COD_SUC" in X.columns else []
 
     # 2) PESOS: 10× para extremos (p3 / p97) ────────────────────────────────
     p3, p97 = np.percentile(y, [3, 97])
@@ -134,7 +136,7 @@ def train_model_for_branch(
         random_state=42
     )
     print(f"🔍 Buscando hiperparámetros para {target} …")
-    search.fit(X_tr, y_tr, sample_weight=w_tr)
+    search.fit(X_tr, y_tr, sample_weight=w_tr, categorical_feature=cat_feats)
 
     best = search.best_estimator_
     print(f"🏆  Seleccionado: {search.best_params_}")
@@ -145,6 +147,7 @@ def train_model_for_branch(
         sample_weight=w_tr,
         eval_set=[(X_val, y_val)],
         eval_sample_weight=[w_val],
+        categorical_feature=cat_feats,
         callbacks=[
             lgb.early_stopping(early_stopping_rounds, verbose=False),
             lgb.log_evaluation(20)
@@ -185,7 +188,8 @@ def train_spike_classifier(
 def train_all_models(
         df: pd.DataFrame,
         targets: list = ['T_VISITAS', 'T_AO'],
-        n_iter: int = 20
+        n_iter: int = 20,
+        global_model: bool = False
 ) -> None:
     """Entrena modelos para todas las sucursales y targets especificados"""
     branches = df['COD_SUC'].unique()
@@ -194,6 +198,18 @@ def train_all_models(
         print(f"\n{'=' * 20}")
         print(f"🚀 ENTRENANDO MODELOS PARA {target}")
         print(f"{'=' * 20}")
+
+        if global_model:
+            try:
+                model = train_model_for_branch(
+                    df.copy(), target, n_iter=n_iter, global_model=True
+                )
+                model_path = os.path.join(MODEL_DIR, f"predictor_{target}_GLOBAL.pkl")
+                joblib.dump(model, model_path)
+                print(f"💾 Modelo global guardado en {model_path}")
+            except Exception as e:
+                print(f"❌ Error entrenando modelo global: {str(e)}")
+            continue
 
         for i, branch in enumerate(branches, 1):
             df_branch = df[df['COD_SUC'] == branch].copy()
