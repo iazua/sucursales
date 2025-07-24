@@ -107,7 +107,7 @@ col1, col2, col3 = st.columns([1, 1, 1])
 with col2:
     st.image(
         "https://upload.wikimedia.org/wikipedia/commons/2/27/Logo_Ripley_banco_2.png",
-        width=500
+        width=600
     )
 
 
@@ -237,8 +237,8 @@ view_state = pdk.ViewState(
 
 # Organizar los distintos análisis en pestañas
 tab_mapa, tab_pred, tab_hist, tab_turno = st.tabs([
-    "Mapa por zona",
-    "Predicciones",
+    "Overview",
+    "Forecast",
     "Análisis histórico",
     "Análisis por turno",
 ])
