@@ -1102,36 +1102,6 @@ if not df_valid.empty:
     with col_worst:
         st.metric("Peor turno", f"{worst['Turno']} ({worst['Efectividad_pct']}%)")
 
-# 3) Barra de efectividad promedio por turno
-fig_rank = px.bar(
-    df_valid.sort_values('Efectividad', ascending=False),
-    x='Turno', y='Efectividad_pct',
-    labels={'Efectividad_pct': 'Efectividad (%)'},
-    title=f'Efectividad promedio por turno ({rango_seleccionado})'
-)
-fig_rank.update_layout(
-    plot_bgcolor='#1a0033',
-    paper_bgcolor='#1a0033',
-    font_color='#FFFFFF',
-    title_font_color='#FFFFFF'
-)
-st.plotly_chart(fig_rank, use_container_width=True)
-
-# 4) Dispersión Dotación vs Efectividad por turno
-fig_scatter = px.scatter(
-    df_valid,
-    x='Dotacion', y='Efectividad_pct', text='Turno',
-    labels={'Dotacion': 'Dotación promedio', 'Efectividad_pct': 'Efectividad (%)'},
-    title='Dotación promedio vs Efectividad por turno'
-)
-fig_scatter.update_traces(textposition='top center')
-fig_scatter.update_layout(
-    plot_bgcolor='#1a0033',
-    paper_bgcolor='#1a0033',
-    font_color='#FFFFFF',
-    title_font_color='#FFFFFF'
-)
-st.plotly_chart(fig_scatter, use_container_width=True)
 
 # Distribución de efectividad por turno
 df_box = df_turnos[df_turnos['turno'] > 0].copy()
@@ -1154,24 +1124,5 @@ fig_box_eff.update_layout(
 st.plotly_chart(fig_box_eff, use_container_width=True)
 
 st.markdown("---")
-st.subheader("🧮 Matriz de correlación de variables históricas")
-
-cols_corr = ["T_VISITAS", "T_AO", "T_AO_VENTA", "DOTACION", "P_EFECTIVIDAD"]
-df_corr = df_suc[cols_corr].dropna()
-if not df_corr.empty:
-    corr = df_corr.corr().round(2)
-    fig = px.imshow(
-        corr,
-        text_auto=True,
-        color_continuous_scale="Purples",
-        title="Correlación entre variables"
-    )
-    fig.update_layout(
-        plot_bgcolor="#1a0033",
-        paper_bgcolor="#1a0033",
-        font_color="#FFFFFF",
-        title_font_color="#FFFFFF"
-    )
-    st.plotly_chart(fig, use_container_width=True)
 
 
