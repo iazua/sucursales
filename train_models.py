@@ -37,8 +37,6 @@ def train_models(
     df["FECHA"] = pd.to_datetime(df["FECHA"])
     df["COD_SUC"] = df["COD_SUC"].astype(str).str.strip()
 
-    # Keep only Monday-Friday records
-    df = df[df["FECHA"].dt.weekday < 5]
 
     # Aggregate at daily level
     df_daily = (
@@ -52,7 +50,7 @@ def train_models(
         df_branch = (
             df_daily[df_daily["COD_SUC"] == branch]
             .set_index("FECHA")
-            .asfreq("B")
+            .asfreq("D")
             .fillna(0)
         )
 
@@ -134,7 +132,7 @@ def generate_predictions(
     if end_date is None:
         end_date = start_date + timedelta(days=days - 1)
 
-    pred_index = pd.bdate_range(start_date, end_date)
+    pred_index = pd.date_range(start_date, end_date)
     horizon = len(pred_index)
 
     result_rows = [
@@ -158,7 +156,6 @@ def generate_predictions(
         df_h.columns = df_h.columns.str.strip().str.upper()
         df_h["FECHA"] = pd.to_datetime(df_h["FECHA"])
         df_h = df_h[df_h["COD_SUC"].astype(str).str.strip() == branch]
-        df_h = df_h[df_h["FECHA"].dt.weekday < 5]
         daily_totals = df_h.groupby("FECHA")[target].transform("sum")
         df_h = df_h[daily_totals > 0]
         df_h["share"] = df_h[target] / daily_totals
@@ -171,7 +168,7 @@ def generate_predictions(
     for t in TARGETS:
         try:
             model = _load_model(t, branch)
-            future = model.make_future_dataframe(periods=horizon, freq="B")
+            future = model.make_future_dataframe(periods=horizon, freq="D")
             forecast = model.predict(future)
             daily_preds = forecast.set_index("ds").reindex(pred_index)["yhat"].fillna(0).values
         except FileNotFoundError:
