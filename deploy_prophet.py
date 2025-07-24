@@ -1,11 +1,19 @@
 import os
 import argparse
+import joblib
 import pandas as pd
 import matplotlib.pyplot as plt
 from preprocessing import forecast_target_prophet
 
 PROPHET_DIR = "models_prophet"
 TARGETS = ["T_VISITAS", "T_AO"]
+
+
+def _load_model(target: str, branch: str):
+    """Load previously trained Prophet model for a branch and target."""
+    fname = f"prophet_{target}_{branch}.pkl"
+    path = os.path.join(PROPHET_DIR, fname)
+    return joblib.load(path)
 
 
 def load_data(path: str = "data/DOTACION_EFECTIVIDAD.xlsx") -> pd.DataFrame:
@@ -23,9 +31,16 @@ def deploy_forecasts(df: pd.DataFrame, horizon_days: int = 365, changepoint_prio
         df_branch = df[df["COD_SUC"] == branch]
         for target in TARGETS:
             df_t = df_branch[["FECHA", target]]
+            model = None
+            try:
+                model = _load_model(target, branch)
+            except FileNotFoundError:
+                print(f"Model not found for {target} in branch {branch}. Fitting new model.")
+
             forecast = forecast_target_prophet(
                 df_t,
                 target=target,
+                model=model,
                 horizon_days=horizon_days,
                 changepoint_prior_scale=changepoint_prior_scale,
             )
