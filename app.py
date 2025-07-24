@@ -17,7 +17,9 @@ from plotly.subplots import make_subplots
 # https://brand.ripley.cl
 PRIMARY_COLOR   = "#4F2D7F"  # Minsk
 DARK_BG_COLOR   = "#361860"  # Scarlet Gum
-TABLE_BG_COLOR  = DARK_BG_COLOR
+# Color de fondo para secciones claras y tablas
+PRIMARY_BG      = "#F8F9FA"
+TABLE_BG_COLOR  = PRIMARY_BG
 ACCENT_COLOR    = "#F1AC4B"  # Sandy Brown
 WHITE           = "#FFFFFF"
 BLACK           = "#000000"
@@ -52,7 +54,7 @@ st.markdown(
     /* DataFrame: fondo de la tabla y de las celdas */
     .stDataFrame div[role="table"] {{
       background-color: var(--table-bg) !important;
-      color: var(--white);
+      color: var(--black);
     }}
     /* Para los encabezados de tabla */
     .stDataFrame th {{
@@ -111,7 +113,7 @@ st.markdown(
     }}
     div[data-testid="stDataFrame"] table {{
       background-color: var(--table-bg) !important;
-      color: var(--white) !important;
+      color: var(--black) !important;
     }}
     div[data-testid="stDataFrame"] th {{
       background-color: var(--primary) !important;
@@ -119,7 +121,7 @@ st.markdown(
     }}
     .stTable table {{
       background-color: var(--table-bg) !important;
-      color: var(--white);
+      color: var(--black);
     }}
     .stTable th {{
       background-color: var(--primary) !important;
