@@ -103,6 +103,18 @@ st.markdown(
       background-color: var(--dark-bg) !important;
       border: none;
     }}
+    /* Ajustes extra para DataFrame en la pestaña Forecast */
+    div[data-testid="stDataFrame"] > div {{
+      background-color: var(--dark-bg) !important;
+    }}
+    div[data-testid="stDataFrame"] table {{
+      background-color: var(--dark-bg) !important;
+      color: var(--white) !important;
+    }}
+    div[data-testid="stDataFrame"] th {{
+      background-color: var(--primary) !important;
+      color: var(--white) !important;
+    }}
     .stTable table {{
       background-color: var(--dark-bg) !important;
       color: var(--white);
@@ -388,7 +400,7 @@ with tab_pred:
         "Ventas requeridas", "% Efectividad requerida"
     ]]
     
-    st.dataframe(df_hourly, use_container_width=True)
+    st.dataframe(df_hourly, use_container_width=True, hide_index=True)
     
     # ——— TABLA POR DÍA ———
     st.subheader("Por día")
@@ -411,7 +423,7 @@ with tab_pred:
     df_daily["_dt"] = pd.to_datetime(df_daily["Fecha registro"], format="%d-%m-%Y")
     df_daily = df_daily.sort_values("_dt").drop(columns="_dt")
     
-    st.dataframe(df_daily, use_container_width=True)
+    st.dataframe(df_daily, use_container_width=True, hide_index=True)
     
     # --- CURVA DE EFECTIVIDAD vs. DOTACIÓN (Teórica) ---
     st.subheader("Curva de Efectividad vs. Dotación")
