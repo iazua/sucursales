@@ -34,6 +34,9 @@ python train_models.py
 
 Los modelos resultantes se guardarán en la carpeta `models_prophet/`.
 
+`deploy_prophet.py` utiliza esos modelos guardados para generar los pronósticos.
+Solo necesitas ejecutarlo después de entrenar para obtener los CSV y gráficos.
+
 
 Para generar pronósticos con Prophet de *T_VISITAS* y *T_AO* y guardar una
 gráfica por variable ejecuta:
