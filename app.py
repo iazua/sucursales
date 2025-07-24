@@ -52,6 +52,15 @@ st.markdown(
       background-color: var(--dark-bg) !important;
       color: var(--white);
     }}
+    /* Tablas simples */
+    .stTable, .stTable table {{
+      background-color: var(--dark-bg) !important;
+      color: var(--white);
+    }}
+    .stTable th {{
+      background-color: var(--primary) !important;
+      color: var(--white);
+    }}
     /* Para los encabezados de tabla */
     .stDataFrame th {{
       background-color: var(--primary) !important;
@@ -93,6 +102,14 @@ st.markdown(
     }}
     .stButton.cta>button:hover {{
       filter: brightness(1.1);
+    }}
+    /* Dropdowns */
+    div[data-baseweb="select"] {{
+      background-color: var(--dark-bg);
+      color: var(--white);
+    }}
+    div[data-baseweb="select"] * {{
+      color: var(--white);
     }}
     /* Sliders */
     div[data-baseweb="slider"] span {{
