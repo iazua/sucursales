@@ -275,13 +275,8 @@ view_state = pdk.ViewState(
     bearing=90
 )
 
-# Organizar los distintos análisis en pestañas
-tab_mapa, tab_pred, tab_hist, tab_turno = st.tabs([
-    "Overview",
-    "Forecast",
-    "Análisis histórico",
-    "Análisis por turno",
-])
+# Todas las secciones se muestran en una sola página
+tab_mapa = tab_pred = tab_hist = tab_turno = st.container()
 
 # 7) Renderizamos las cuatro capas en un solo mapa con la nueva vista
 with tab_mapa:
