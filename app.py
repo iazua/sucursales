@@ -25,6 +25,7 @@ ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
 WHITE = "#FFFFFF"
 BLACK = "#000000"
 ACCENT_RGBA = "[241, 172, 75, 160]"  # Sandy Brown con opacidad
+PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
 # ---------------------------------------------------------------------------
 
 # --- CONSTANTES ---
@@ -235,6 +236,7 @@ layer_vis = pdk.Layer(
     get_fill_color=ACCENT_RGBA,
     get_radius='pct_vis * 400000',
     auto_highlight=True,
+    highlight_color=PRIMARY_RGBA,
 )
 
 layer_ao = pdk.Layer(
@@ -245,6 +247,7 @@ layer_ao = pdk.Layer(
     get_fill_color=ACCENT_RGBA,
     get_radius='pct_ao * 400000',
     auto_highlight=True,
+    highlight_color=PRIMARY_RGBA,
 )
 
 layer_ao_venta = pdk.Layer(
@@ -255,6 +258,7 @@ layer_ao_venta = pdk.Layer(
     get_fill_color=ACCENT_RGBA,
     get_radius='pct_ao_venta * 400000',
     auto_highlight=True,
+    highlight_color=PRIMARY_RGBA,
 )
 
 layer_efectividad = pdk.Layer(
@@ -265,6 +269,7 @@ layer_efectividad = pdk.Layer(
     get_fill_color=ACCENT_RGBA,
     get_radius='pct_efectividad * 10000',
     auto_highlight=True,
+    highlight_color=PRIMARY_RGBA,
 )
 
 # 6) Vista centrada en Chile con rotación de 90° hacia la derecha
