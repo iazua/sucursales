@@ -528,17 +528,10 @@ with tab_hist:
         },
         title='Total de Visitas y Ofertas Aceptadas por Día de la Semana'
     )
-
+    
     # Cambiar las etiquetas de la leyenda
     fig.for_each_trace(lambda t: t.update(name='Visitas' if t.name == 'T_VISITAS' else 'Acepta Oferta'))
-    fig.update_layout(
-        plot_bgcolor=DARK_BG_COLOR,
-        paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE,
-        legend_title_font_color=WHITE
-    )
-
+    
     st.plotly_chart(fig, use_container_width=True)
     
     
@@ -569,16 +562,10 @@ with tab_hist:
                 values='T_VISITAS_pond',
                 title='Proporción de Visitas ponderadas: Semana vs Fin de Semana',
                 hole=0.4
-            ).update_layout(
-                height=600,
-                plot_bgcolor=DARK_BG_COLOR,
-                paper_bgcolor=DARK_BG_COLOR,
-                font_color=WHITE,
-                title_font_color=WHITE
-            ),
+            ).update_layout(height=600),
             use_container_width=True
         )
-
+    
     with col2:
         st.plotly_chart(
             px.pie(
@@ -587,13 +574,7 @@ with tab_hist:
                 values='T_AO_pond',
                 title='Proporción de Ofertas Aceptadas ponderadas: Semana vs Fin de Semana',
                 hole=0.4
-            ).update_layout(
-                height=600,
-                plot_bgcolor=DARK_BG_COLOR,
-                paper_bgcolor=DARK_BG_COLOR,
-                font_color=WHITE,
-                title_font_color=WHITE
-            ),
+            ).update_layout(height=600),
             use_container_width=True
         )
     
@@ -628,19 +609,7 @@ with tab_hist:
     df_pivot_ao = df_plot_ao.pivot_table(
         index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
     )
-    df_plot_ao_long = (
-        df_pivot_ao
-        .reset_index()
-        .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
-    )
-    fig = px.line(df_plot_ao_long, x='FECHA', y='Valor', color='Tipo')
-    fig.update_layout(
-        plot_bgcolor=DARK_BG_COLOR,
-        paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    st.line_chart(df_pivot_ao)
     
     # --- GRÁFICO 2: Ventas Concretadas diario ---
     st.subheader("📈 Histórico y Predicción de Ventas Concretadas (diario)")
@@ -671,19 +640,7 @@ with tab_hist:
     df_pivot_v = df_plot_v.pivot_table(
         index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
     )
-    df_plot_v_long = (
-        df_pivot_v
-        .reset_index()
-        .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
-    )
-    fig = px.line(df_plot_v_long, x='FECHA', y='Valor', color='Tipo')
-    fig.update_layout(
-        plot_bgcolor=DARK_BG_COLOR,
-        paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    st.line_chart(df_pivot_v)
 
 
 # --- Agregar selector de rango de días al inicio ---
@@ -759,13 +716,6 @@ with tab_turno:
             'variable': 'Métrica'
         },
         title=f"Visitas y Acepta Oferta promedio por franja horaria ({rango_seleccionado})"
-    )
-    fig.update_layout(
-        plot_bgcolor=DARK_BG_COLOR,
-        paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE,
-        legend_title_font_color=WHITE
     )
     st.plotly_chart(fig, use_container_width=True)
     
