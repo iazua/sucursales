@@ -99,31 +99,31 @@ st.markdown(
       background-color: var(--accent) !important;
     }}
     /* Tablas incrustadas en el fondo */
-    .stDataFrame, .stTable {
+    .stDataFrame, .stTable {{
       background-color: var(--dark-bg) !important;
       border: none;
-    }
-    .stTable table {
+    }}
+    .stTable table {{
       background-color: var(--dark-bg) !important;
       color: var(--white);
-    }
-    .stTable th {
+    }}
+    .stTable th {{
       background-color: var(--primary) !important;
       color: var(--white);
-    }
+    }}
     /* Dropdown integrado */
-    .stSelectbox div[data-baseweb="select"] > div {
+    .stSelectbox div[data-baseweb="select"] > div {{
       background-color: var(--dark-bg);
       color: var(--white);
       border-color: var(--primary);
-    }
-    .stSelectbox div[data-baseweb="select"] > div:hover {
+    }}
+    .stSelectbox div[data-baseweb="select"] > div:hover {{
       border-color: var(--accent);
-    }
-    .stSelectbox div[data-baseweb="select"] > div:focus-within {
+    }}
+    .stSelectbox div[data-baseweb="select"] > div:focus-within {{
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(241,172,75,0.4);
-    }
+    }}
     </style>
     """,
     unsafe_allow_html=True
