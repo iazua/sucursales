@@ -279,10 +279,10 @@ view_state = pdk.ViewState(
 # Tabs para organizar la aplicación de forma más clara
 tab_mapa, tab_pred, tab_hist, tab_turno = st.tabs(
     [
-        "Mapa de Zonas",
-        "Predicciones",
-        "Histórico Ponderado",
-        "Análisis por Turno",
+        "Overview",
+        "Forecast",
+        "Histórico",
+        "Turnos",
     ]
 )
 
