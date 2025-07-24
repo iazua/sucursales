@@ -9,7 +9,19 @@ from preprocessing import assign_turno, prepare_features
 from utils import calcular_efectividad, estimar_dotacion_optima, estimar_parametros_efectividad
 import pydeck as pdk
 import plotly.graph_objects as go
+
 from plotly.subplots import make_subplots
+
+# ---------------------------------------------------------------------------
+# Paleta oficial Banco Ripley Chile (2023)
+# https://brand.ripley.cl
+PRIMARY_COLOR   = "#4F2D7F"  # Minsk
+DARK_BG_COLOR   = "#361860"  # Scarlet Gum
+ACCENT_COLOR    = "#F1AC4B"  # Sandy Brown
+WHITE           = "#FFFFFF"
+BLACK           = "#000000"
+ACCENT_RGBA     = "[241, 172, 75, 160]"  # Sandy Brown con opacidad
+# ---------------------------------------------------------------------------
 
 # --- CONSTANTES ---
 # Rango horario estándar para la proyección (9–21)
@@ -22,40 +34,70 @@ PROPHET_DIR = "models_prophet"
 # --- CONFIGURACIÓN INICIAL ---
 st.set_page_config(page_title="Predicción de Dotación Óptima (Hourly)", layout="wide")
 st.markdown(
-    """
+    f"""
     <style>
+    :root {{
+      --primary: {PRIMARY_COLOR};
+      --dark-bg: {DARK_BG_COLOR};
+      --accent: {ACCENT_COLOR};
+      --white: {WHITE};
+      --black: {BLACK};
+    }}
     /* Fondo general */
-    .stApp, .css-1d391kg {
-      background-color: #361860;
-    }
+    .stApp, .css-1d391kg {{
+      background-color: var(--dark-bg);
+    }}
     /* DataFrame: fondo de la tabla y de las celdas */
-    .stDataFrame div[role="table"] {
-      background-color: #361860 !important;
-      color: #FFFFFF;
-    }
+    .stDataFrame div[role="table"] {{
+      background-color: var(--dark-bg) !important;
+      color: var(--white);
+    }}
     /* Para los encabezados de tabla */
-    .stDataFrame th {
-      background-color: #4F2D7F !important;
-      color: #FFFFFF;
-    }
+    .stDataFrame th {{
+      background-color: var(--primary) !important;
+      color: var(--white);
+    }}
     /* Para las gráficas, el contenedor externo */
-    .stPlotlyChart div {
-      background-color: #361860 !important;
-    }
-    /* Botones */
-    .stButton>button {
-      background-color: #4F2D7F;
-      color: #FFFFFF;
+    .stPlotlyChart div {{
+      background-color: var(--dark-bg) !important;
+    }}
+    /* Botones primarios */
+    .stButton>button {{
+      background-color: var(--primary);
+      color: var(--white);
       border: none;
-    }
-    .stButton>button:hover {
-      background-color: #F1AC4B;
-      color: #361860;
-    }
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }}
+    .stButton>button:hover {{
+      background-color: var(--accent);
+      color: var(--black);
+    }}
+    .stButton>button:focus {{
+      outline: 2px solid var(--accent);
+      box-shadow: 0 0 0 3px rgba(241,172,75,0.4);
+    }}
+    /* Botones secundarios (agregar class "secondary" si se requieren) */
+    .stButton.secondary>button {{
+      background-color: rgba(255,255,255,0.95);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }}
+    .stButton.secondary>button:hover {{
+      background-color: var(--primary);
+      color: var(--white);
+    }}
+    /* Botones CTA/acento (class "cta") */
+    .stButton.cta>button {{
+      background-color: var(--accent);
+      color: var(--black);
+    }}
+    .stButton.cta>button:hover {{
+      filter: brightness(1.1);
+    }}
     /* Sliders */
-    div[data-baseweb="slider"] span {
-      background-color: #F1AC4B !important;
-    }
+    div[data-baseweb="slider"] span {{
+      background-color: var(--accent) !important;
+    }}
     </style>
     """,
     unsafe_allow_html=True
@@ -149,7 +191,7 @@ layer_vis = pdk.Layer(
     data=df_zona,
     pickable=True,
     get_position='[lon, lat]',
-    get_fill_color='[241, 172, 75, 160]',
+    get_fill_color=ACCENT_RGBA,
     get_radius='pct_vis * 400000',
     auto_highlight=True,
 )
@@ -159,7 +201,7 @@ layer_ao = pdk.Layer(
     data=df_zona,
     pickable=True,
     get_position='[lon, lat]',
-    get_fill_color='[241, 172, 75, 160]',
+    get_fill_color=ACCENT_RGBA,
     get_radius='pct_ao * 400000',
     auto_highlight=True,
 )
@@ -169,7 +211,7 @@ layer_ao_venta = pdk.Layer(
     data=df_zona,
     pickable=True,
     get_position='[lon, lat]',
-    get_fill_color='[241, 172, 75, 160]',
+    get_fill_color=ACCENT_RGBA,
     get_radius='pct_ao_venta * 400000',
     auto_highlight=True,
 )
@@ -179,7 +221,7 @@ layer_efectividad = pdk.Layer(
     data=df_zona,
     pickable=True,
     get_position='[lon, lat]',
-    get_fill_color='[241, 172, 75, 160]',
+    get_fill_color=ACCENT_RGBA,
     get_radius='pct_efectividad * 10000',
     auto_highlight=True,
 )
@@ -215,7 +257,7 @@ with tab_mapa:
                 "<b>Ofertas aceptadas de venta:</b> {T_AO_VENTA} ({label_ao_venta})<br>"
                 "<b>Efectividad:</b> {label_efectividad}"
             ),
-            "style": {"backgroundColor":"#F1AC4B","color":"#361860"}
+            "style": {"backgroundColor": ACCENT_COLOR, "color": DARK_BG_COLOR}
         }
     ), use_container_width=True)
 
@@ -409,10 +451,10 @@ with tab_pred:
         title=" "
     )
     fig.update_layout(
-        paper_bgcolor="#361860",
-        plot_bgcolor="#361860",
-        font_color="#FFFFFF",
-        title_font_color="#FFFFFF"
+        paper_bgcolor=DARK_BG_COLOR,
+        plot_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE
     )
     # Ajustar el rango inicial del eje X para que comience en 1
     fig.update_xaxes(range=[dot_range.min(), dot_range.max()])
@@ -751,10 +793,10 @@ with tab_turno:
     )
     fig.update_xaxes(side='top')
     fig.update_layout(
-        plot_bgcolor='#361860',
-        paper_bgcolor='#361860',
-        font_color='#FFFFFF',
-        title_font_color='#FFFFFF'
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE
     )
     
     st.plotly_chart(fig, use_container_width=True)
@@ -801,9 +843,9 @@ with tab_turno:
         height=900,
         showlegend=False,
         title_text=f'Efectividad diaria por turno ({rango_seleccionado})',
-        plot_bgcolor='#361860',
-        paper_bgcolor='#361860',
-        font_color='#FFFFFF',
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
         margin=dict(t=80, b=40, l=60, r=40)
     )
     
@@ -858,11 +900,11 @@ with tab_turno:
     )
     fig.update_layout(
         yaxis_tickformat='.2f',
-        plot_bgcolor='#361860',
-        paper_bgcolor='#361860',
-        font_color='#FFFFFF',
-        title_font_color='#FFFFFF',
-        legend_title_font_color='#FFFFFF'
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE,
+        legend_title_font_color=WHITE
     )
     st.plotly_chart(fig, use_container_width=True)
     
@@ -896,10 +938,10 @@ with tab_turno:
     
     # 4) Estilo acorde al tema oscuro
     fig.update_layout(
-        plot_bgcolor='#361860',
-        paper_bgcolor='#361860',
-        font_color='#FFFFFF',
-        title_font_color='#FFFFFF',
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE,
         yaxis_tickformat='.2f'
     )
     
@@ -1142,10 +1184,10 @@ with tab_turno:
         title=f'Distribuci\u00f3n de efectividad por turno ({rango_seleccionado})'
     )
     fig_box_eff.update_layout(
-        plot_bgcolor='#361860',
-        paper_bgcolor='#361860',
-        font_color='#FFFFFF',
-        title_font_color='#FFFFFF',
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE,
         yaxis_tickformat='.2f'
     )
     st.plotly_chart(fig_box_eff, use_container_width=True)
