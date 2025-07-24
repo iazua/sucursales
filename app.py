@@ -396,23 +396,8 @@ fig.update_layout(
     font_color="#FFFFFF",
     title_font_color="#FFFFFF"
 )
-fig.add_vline(
-    x=dot_opt,
-    line_dash="dash",
-    line_color="yellow",
-    annotation_text=f"X óptimo: {dot_opt}",
-    annotation_position="top left",
-    annotation_font_color="yellow",
-)
-fig.add_trace(
-    go.Scatter(
-        x=[dot_opt],
-        y=[sigmoid(dot_opt, x0_theo)],
-        mode="markers",
-        marker=dict(color="yellow", size=10),
-        showlegend=False,
-    )
-)
+# Se elimina la línea vertical y el marcador que destacaban el punto óptimo
+# para simplificar el gráfico de efectividad.
 st.plotly_chart(fig, use_container_width=True)
 
 df_display = df_pred.copy()

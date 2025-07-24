@@ -72,6 +72,15 @@ correspondientes. Para publicar la app en línea puedes usar servicios como
 **Streamlit Community Cloud** o cualquier plataforma que ejecute aplicaciones
 Python (Heroku, GCP, AWS, etc.).
 
+### Parámetro `k` por sucursal
+
+El coeficiente `k` que controla la pendiente de la curva de efectividad se
+ajusta de forma independiente para cada sucursal. El módulo `utils.py` incluye
+la función `estimar_parametros_efectividad` que utiliza los datos históricos de
+dotación y ventas para obtener el valor de `k` junto con los demás parámetros de
+la curva. Si una sucursal no dispone de suficiente historial, se utiliza el
+valor por defecto `k = 0.5` hasta contar con más información.
+
 
 
 
