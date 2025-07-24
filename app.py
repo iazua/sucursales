@@ -36,6 +36,17 @@ PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
 # Carpeta de pronósticos Prophet
 PROPHET_DIR = "models_prophet"
 
+# Mapeo de días de la semana en inglés a español
+DAY_NAME_MAP_ES = {
+    "Monday": "Lunes",
+    "Tuesday": "Martes",
+    "Wednesday": "Miércoles",
+    "Thursday": "Jueves",
+    "Friday": "Viernes",
+    "Saturday": "Sábado",
+    "Sunday": "Domingo",
+}
+
 # --- CONFIGURACIÓN INICIAL ---
 st.set_page_config(page_title="Predicción de Dotación Óptima (Hourly)", layout="wide")
 st.markdown(
@@ -382,7 +393,7 @@ with tab_pred:
 
     # 2) Formateamos FECHA y añadimos día de la semana
     df_hourly["Fecha registro"] = df_hourly["FECHA"].dt.strftime("%d-%m-%Y")
-    df_hourly["Día"] = df_hourly["FECHA"].dt.day_name(locale="es")
+    df_hourly["Día"] = df_hourly["FECHA"].dt.day_name().map(DAY_NAME_MAP_ES)
 
     # 3) Renombramos cada métrica de forma explícita
     df_hourly = df_hourly.rename(columns={
@@ -891,7 +902,7 @@ with tab_turno:
     st.subheader("🌡️ Heatmap de conversión por día de la semana y turno")
 
     # 1) Calcular conversión por día de la semana y turno
-    df_turnos['DiaSemana'] = df_turnos['FECHA'].dt.day_name(locale="es")
+    df_turnos['DiaSemana'] = df_turnos['FECHA'].dt.day_name().map(DAY_NAME_MAP_ES)
     conv_dt = (
         df_turnos
         .groupby(['DiaSemana', 'turno'], observed=True)
