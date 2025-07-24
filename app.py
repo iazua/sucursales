@@ -497,6 +497,92 @@ with tab_pred:
         "T_AO_VENTA_req": "Ventas requeridas",
         "P_EFECTIVIDAD_req": "% Efectividad requerida",
     })
+
+    # --- GRÁFICO 1: Ofertas Aceptadas diario ---
+    st.subheader("📈 Histórico y Predicción de Ofertas Aceptadas (diario)")
+
+    # Agrupar histórico por fecha
+    hist_ao = (
+        df_suc
+        .groupby('FECHA', observed=True)['T_AO']
+        .sum()
+        .reset_index()
+        .rename(columns={'T_AO':'Valor'})
+        .assign(Tipo='Histórico')
+    )
+
+    # Agrupar predicción por fecha
+    pred_ao = (
+        df_display
+        .groupby('DÍA', observed=True)['Ofertas aceptadas estimadas']
+        .sum()
+        .reset_index()
+        .rename(columns={'DÍA':'FECHA','Ofertas aceptadas estimadas':'Valor'})
+    )
+    pred_ao['FECHA'] = pd.to_datetime(pred_ao['FECHA'], format='%d-%m-%Y')
+    pred_ao = pred_ao.sort_values('FECHA').head(days_proj).assign(Tipo='Predicción')
+
+    # Combinar y pivotar
+    df_plot_ao = pd.concat([hist_ao, pred_ao], ignore_index=True)
+    df_pivot_ao = df_plot_ao.pivot_table(
+        index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
+    )
+    df_plot_ao_long = (
+        df_pivot_ao
+        .reset_index()
+        .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
+    )
+    fig = px.line(df_plot_ao_long, x='FECHA', y='Valor', color='Tipo')
+    fig.update_layout(
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # --- GRÁFICO 2: Ventas Concretadas diario ---
+    st.subheader("📈 Histórico y Predicción de Ventas Concretadas (diario)")
+
+    # Agrupar histórico de ventas
+    hist_v = (
+        df_suc
+        .groupby('FECHA', observed=True)['T_AO_VENTA']
+        .sum()
+        .reset_index()
+        .rename(columns={'T_AO_VENTA':'Valor'})
+        .assign(Tipo='Histórico')
+    )
+
+    # Agrupar predicción de ventas requeridas
+    pred_v = (
+        df_display
+        .groupby('DÍA', observed=True)['Ventas requeridas']
+        .sum()
+        .reset_index()
+        .rename(columns={'DÍA':'FECHA','Ventas requeridas':'Valor'})
+    )
+    pred_v['FECHA'] = pd.to_datetime(pred_v['FECHA'], format='%d-%m-%Y')
+    pred_v = pred_v.sort_values('FECHA').head(days_proj).assign(Tipo='Requerida')
+
+    # Combinar y pivotar
+    df_plot_v = pd.concat([hist_v, pred_v], ignore_index=True)
+    df_pivot_v = df_plot_v.pivot_table(
+        index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
+    )
+    df_plot_v_long = (
+        df_pivot_v
+        .reset_index()
+        .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
+    )
+    fig = px.line(df_plot_v_long, x='FECHA', y='Valor', color='Tipo')
+    fig.update_layout(
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE
+    )
+    st.plotly_chart(fig, use_container_width=True)
     
 # --- ANÁLISIS HISTÓRICO PONDERADO POR DÍA DE LA SEMANA ---
 
@@ -625,91 +711,6 @@ with tab_hist:
     
     
     
-    # --- GRÁFICO 1: Ofertas Aceptadas diario ---
-    st.subheader("📈 Histórico y Predicción de Ofertas Aceptadas (diario)")
-    
-    # Agrupar histórico por fecha
-    hist_ao = (
-    df_suc
-        .groupby('FECHA', observed=True)['T_AO']
-        .sum()
-        .reset_index()
-        .rename(columns={'T_AO':'Valor'})
-        .assign(Tipo='Histórico')
-    )
-    
-    # Agrupar predicción por fecha
-    pred_ao = (
-        df_display
-        .groupby('DÍA', observed=True)['Ofertas aceptadas estimadas']
-        .sum()
-        .reset_index()
-        .rename(columns={'DÍA':'FECHA','Ofertas aceptadas estimadas':'Valor'})
-    )
-    pred_ao['FECHA'] = pd.to_datetime(pred_ao['FECHA'], format='%d-%m-%Y')
-    pred_ao = pred_ao.sort_values('FECHA').head(days_proj).assign(Tipo='Predicción')
-    
-    # Combinar y pivotar
-    df_plot_ao = pd.concat([hist_ao, pred_ao], ignore_index=True)
-    df_pivot_ao = df_plot_ao.pivot_table(
-        index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
-    )
-    df_plot_ao_long = (
-        df_pivot_ao
-        .reset_index()
-        .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
-    )
-    fig = px.line(df_plot_ao_long, x='FECHA', y='Valor', color='Tipo')
-    fig.update_layout(
-        plot_bgcolor=DARK_BG_COLOR,
-        paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # --- GRÁFICO 2: Ventas Concretadas diario ---
-    st.subheader("📈 Histórico y Predicción de Ventas Concretadas (diario)")
-    
-    # Agrupar histórico de ventas
-    hist_v = (
-        df_suc
-        .groupby('FECHA', observed=True)['T_AO_VENTA']
-        .sum()
-        .reset_index()
-        .rename(columns={'T_AO_VENTA':'Valor'})
-        .assign(Tipo='Histórico')
-    )
-    
-    # Agrupar predicción de ventas requeridas
-    pred_v = (
-        df_display
-        .groupby('DÍA', observed=True)['Ventas requeridas']
-        .sum()
-        .reset_index()
-        .rename(columns={'DÍA':'FECHA','Ventas requeridas':'Valor'})
-    )
-    pred_v['FECHA'] = pd.to_datetime(pred_v['FECHA'], format='%d-%m-%Y')
-    pred_v = pred_v.sort_values('FECHA').head(days_proj).assign(Tipo='Requerida')
-    
-    # Combinar y pivotar
-    df_plot_v = pd.concat([hist_v, pred_v], ignore_index=True)
-    df_pivot_v = df_plot_v.pivot_table(
-        index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
-    )
-    df_plot_v_long = (
-        df_pivot_v
-        .reset_index()
-        .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
-    )
-    fig = px.line(df_plot_v_long, x='FECHA', y='Valor', color='Tipo')
-    fig.update_layout(
-        plot_bgcolor=DARK_BG_COLOR,
-        paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE
-    )
-    st.plotly_chart(fig, use_container_width=True)
 
 
 # --- Agregar selector de rango de días al inicio ---
