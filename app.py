@@ -339,21 +339,18 @@ k_def   = params_eff['k']
 x0_base = params_eff['x0_base']
 x0_fac  = params_eff['x0_factor_t_ao_venta']
 
-# 2. Parámetro k personalizable vía entero (se divide internamente entre 100)
-# El usuario ingresa, por ejemplo, 50 para k=0.50
-k_def_int = int(k_def * 100)
-k_int = st.number_input(
+# 2. Parámetro k personalizable, inicializado con el valor por defecto de la sucursal
+k = st.number_input(
     "Coeficiente k = Pendiente de la Curva (T_AO)",
-    min_value=0, max_value=2000,
-    value=k_def_int,
-    step=1
+    min_value=0.0, max_value=2.0,
+    value=float(k_def),
+    step=0.01,
+    format="%.2f",
+    key=f"k_{cod_suc}"
 )
-k = k_int / 100.0
 
-# 3. Rango de dotación
-min_dot   = st.number_input("Dotación mínima", 1, 100, 1, 1)
-max_dot   = st.number_input("Dotación máxima", min_dot, 100, 9, 1)
-dot_range = np.arange(min_dot, max_dot+1)
+# 3. Rango de dotación fijo entre 0 y 12 (enteros)
+dot_range = np.arange(0, 13)
 
 # 4. Calcular x0 recalibrado usando promedio de Ventas requeridas
 avg_ventas = np.nanmean(df_pred["T_AO_VENTA_req"]) if 'T_AO_VENTA_req' in df_pred else np.nan
@@ -376,6 +373,15 @@ df_curve = pd.DataFrame({
     "Efectividad": np.concatenate([ef_sig, ef_gom])
 })
 
+# 6.b Calcular dotación óptima usando las predicciones actuales
+dot_opt, _ = estimar_dotacion_optima(
+    df_pred["T_AO_pred"],
+    df_pred["T_AO_VENTA_req"],
+    efectividad_obj,
+    params_eff,
+)
+dot_opt = int(np.clip(np.round(dot_opt), dot_range.min(), dot_range.max()))
+
 # 7. Graficar con fondo púrpura si aplica
 fig = px.line(
     df_curve,
@@ -389,6 +395,23 @@ fig.update_layout(
     plot_bgcolor="#1a0033",
     font_color="#FFFFFF",
     title_font_color="#FFFFFF"
+)
+fig.add_vline(
+    x=dot_opt,
+    line_dash="dash",
+    line_color="yellow",
+    annotation_text=f"X óptimo: {dot_opt}",
+    annotation_position="top left",
+    annotation_font_color="yellow",
+)
+fig.add_trace(
+    go.Scatter(
+        x=[dot_opt],
+        y=[sigmoid(dot_opt, x0_theo)],
+        mode="markers",
+        marker=dict(color="yellow", size=10),
+        showlegend=False,
+    )
 )
 st.plotly_chart(fig, use_container_width=True)
 
