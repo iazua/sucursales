@@ -343,8 +343,8 @@ x0_fac  = params_eff['x0_factor_t_ao_venta']
 k = float(k_def)
 st.write(f"Coeficiente k estimado: {k:.2f}")
 
-# 3. Rango de dotación fijo entre 0 y 12 (enteros)
-dot_range = np.arange(0, 13)
+# 3. Rango de dotación fijo entre 1 y 12 (enteros)
+dot_range = np.arange(1, 13)
 
 # 4. Calcular x0 recalibrado usando promedio de Ventas requeridas
 avg_ventas = np.nanmean(df_pred["T_AO_VENTA_req"]) if 'T_AO_VENTA_req' in df_pred else np.nan
@@ -390,15 +390,8 @@ fig.update_layout(
     font_color="#FFFFFF",
     title_font_color="#FFFFFF"
 )
-fig.add_trace(
-    go.Scatter(
-        x=[dot_opt],
-        y=[sigmoid(dot_opt, x0_theo)],
-        mode="markers",
-        marker=dict(color="yellow", size=10),
-        showlegend=False,
-    )
-)
+# Ajustar el rango inicial del eje X para que comience en 1
+fig.update_xaxes(range=[dot_range.min(), dot_range.max()])
 st.plotly_chart(fig, use_container_width=True)
 
 df_display = df_pred.copy()
