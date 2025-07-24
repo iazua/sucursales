@@ -198,7 +198,7 @@ st.pydeck_chart(pdk.Deck(
 
 st.title("🔍 Predicción de Dotación y Efectividad por Hora")
 
-method = st.sidebar.radio("Método", ["SARIMA", "Prophet"])
+method = "Prophet"
 
 # --- CONTROL DE HORIZONTE DE PROYECCIÓN ---
 days_proj = st.slider(
@@ -251,376 +251,328 @@ def forecast_fast(df_all: pd.DataFrame,
 
 
 # ---------- LLAMADA ----------
-if method == "SARIMA":
-    df_pred = forecast_fast(
-        df,
-        cod_suc,
-        efectividad_obj,
-        days_proj,
-    )
+df_pred = forecast_fast(
+    df,
+    cod_suc,
+    efectividad_obj,
+    days_proj,
+)
+
+
+# ——— TABLA POR HORA ———
+st.subheader(f"📈 Predicciones para los próximos {days_proj} días")
+st.subheader("Por hora")
+    
+# 1) Seleccionamos únicamente las columnas de df_pred que necesitamos
+df_hourly = df_pred[[
+    "FECHA",
+    "HORA",
+    "T_VISITAS_pred",
+    "T_AO_pred",
+    "T_AO_VENTA_req",
+    "P_EFECTIVIDAD_req"
+]].copy()
+
+# 2) Formateamos FECHA y añadimos día de la semana
+df_hourly["Fecha registro"] = df_hourly["FECHA"].dt.strftime("%d-%m-%Y")
+df_hourly["Día"]            = df_hourly["FECHA"].dt.day_name(locale="es")
+
+# 3) Renombramos cada métrica de forma explícita
+df_hourly = df_hourly.rename(columns={
+    "HORA":                  "Hora",
+    "T_VISITAS_pred":        "Visitas estimadas",
+    "T_AO_pred":             "Ofertas aceptadas estimadas",
+    "T_AO_VENTA_req":        "Ventas requeridas",
+    "P_EFECTIVIDAD_req":     "% Efectividad requerida",
+})
+
+# 4) Redondeamos y transformamos tipos
+df_hourly["Visitas estimadas"]           = df_hourly["Visitas estimadas"].round(0).astype(int)
+df_hourly["Ofertas aceptadas estimadas"] = df_hourly["Ofertas aceptadas estimadas"].round(0).astype(int)
+df_hourly["Ventas requeridas"]           = df_hourly["Ventas requeridas"].round(0).astype(int)
+df_hourly["% Efectividad requerida"]     = df_hourly["% Efectividad requerida"].round(2)
+
+# 5) Seleccionamos el orden final de columnas
+df_hourly = df_hourly[[
+    "Fecha registro", "Día", "Hora",
+    "Visitas estimadas", "Ofertas aceptadas estimadas",
+    "Ventas requeridas", "% Efectividad requerida"
+]]
+
+st.dataframe(df_hourly, use_container_width=True)
+
+# ——— TABLA POR DÍA ———
+st.subheader("Por día")
+
+df_daily = (
+    df_hourly
+    .groupby(["Fecha registro", "Día"], as_index=False)
+    .agg({
+        "Visitas estimadas":           "sum",
+        "Ofertas aceptadas estimadas": "sum",
+        "Ventas requeridas":           "sum",
+        "% Efectividad requerida":     "mean"
+    })
+)
+
+# Redondeo final de efectividad
+df_daily["% Efectividad requerida"] = df_daily["% Efectividad requerida"].round(2)
+
+# Orden cronológico
+df_daily["_dt"] = pd.to_datetime(df_daily["Fecha registro"], format="%d-%m-%Y")
+df_daily = df_daily.sort_values("_dt").drop(columns="_dt")
+
+st.dataframe(df_daily, use_container_width=True)
+
+# --- CURVA DE EFECTIVIDAD vs. DOTACIÓN (Teórica) ---
+st.subheader("Curva de Efectividad vs. Dotación")
+
+# 1. Estimar parámetros históricos
+hist = df_suc[['DOTACION','T_AO','T_AO_VENTA']].dropna()
+if len(hist) >= 3:
+    params_eff = estimar_parametros_efectividad(hist)
 else:
-    # Cargar pronósticos Prophet para dotación, visitas y AO
-    files = {
-        "DOTACION": os.path.join(PROPHET_DIR, f"{cod_suc}_forecast.csv"),
-        "T_VISITAS": os.path.join(PROPHET_DIR, f"{cod_suc}_T_VISITAS_forecast.csv"),
-        "T_AO": os.path.join(PROPHET_DIR, f"{cod_suc}_T_AO_forecast.csv"),
-    }
+    params_eff = {'L':1.0, 'k':0.5, 'x0_base':5.0, 'x0_factor_t_ao_venta':0.05}
 
-    forecasts = {}
-    for key, path_csv in files.items():
-        if os.path.exists(path_csv):
-            df_tmp = pd.read_csv(path_csv)
-            df_tmp["ds"] = pd.to_datetime(df_tmp["ds"])
-            forecasts[key] = df_tmp
-        else:
-            st.warning(f"Pronóstico Prophet no encontrado: {os.path.basename(path_csv)}")
+L       = params_eff['L']
+k_def   = params_eff['k']
+x0_base = params_eff['x0_base']
+x0_fac  = params_eff['x0_factor_t_ao_venta']
 
-    if forecasts:
-        fig = go.Figure()
-        for name, df_p in forecasts.items():
-            fig.add_trace(go.Scatter(x=df_p["ds"], y=df_p["yhat"], name=name))
-            fig.add_trace(
-                go.Scatter(
-                    x=df_p["ds"],
-                    y=df_p["yhat_upper"],
-                    line=dict(width=0),
-                    showlegend=False,
-                )
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=df_p["ds"],
-                    y=df_p["yhat_lower"],
-                    fill="tonexty",
-                    line=dict(width=0),
-                    showlegend=False,
-                )
-            )
-        fig.update_layout(
-            title="Pronóstico Prophet",
-            paper_bgcolor="#1a0033",
-            plot_bgcolor="#1a0033",
-            font_color="#FFFFFF",
-        )
-        st.plotly_chart(fig, use_container_width=True)
+# 2. Parámetro k personalizable vía entero (se divide internamente entre 100)
+# El usuario ingresa, por ejemplo, 50 para k=0.50
+k_def_int = int(k_def * 100)
+k_int = st.number_input(
+    "Coeficiente k = Pendiente de la Curva (T_AO)",
+    min_value=0, max_value=2000,
+    value=k_def_int,
+    step=1
+)
+k = k_int / 100.0
+
+# 3. Rango de dotación
+min_dot   = st.number_input("Dotación mínima", 1, 100, 1, 1)
+max_dot   = st.number_input("Dotación máxima", min_dot, 100, 9, 1)
+dot_range = np.arange(min_dot, max_dot+1)
+
+# 4. Calcular x0 recalibrado usando promedio de Ventas requeridas
+avg_ventas = np.nanmean(df_pred["T_AO_VENTA_req"]) if 'T_AO_VENTA_req' in df_pred else np.nan
+x0_theo = x0_base if np.isnan(avg_ventas) or avg_ventas <= 0 else max(1.0, x0_base - x0_fac * avg_ventas)
+
+# 5. Definir funciones con k dinámico
+def sigmoid(x, x0):
+    return 0.0 if x <= 0 else L / (1 + np.exp(-k * (x - x0)))
+
+def gompertz(x, x0):
+    return 0.0 if x <= 0 else L * np.exp(-np.exp(-k * (x - x0)))
+
+# 6. Generar curva teórica
+ef_sig = np.array([sigmoid(x, x0_theo) for x in dot_range])
+ef_gom = np.array([gompertz(x, x0_theo) for x in dot_range])
+
+df_curve = pd.DataFrame({
+    "Dotación":    np.tile(dot_range, 2),
+    "Modelo":      ["Sigmoide"] * len(dot_range) + ["Gompertz"] * len(dot_range),
+    "Efectividad": np.concatenate([ef_sig, ef_gom])
+})
+
+# 7. Graficar con fondo púrpura si aplica
+fig = px.line(
+    df_curve,
+    x="Dotación", y="Efectividad",
+    color="Modelo",
+    labels={"Dotación":"Dotación","Efectividad":"Efectividad"},
+    title=" "
+)
+fig.update_layout(
+    paper_bgcolor="#1a0033",
+    plot_bgcolor="#1a0033",
+    font_color="#FFFFFF",
+    title_font_color="#FFFFFF"
+)
+st.plotly_chart(fig, use_container_width=True)
+
+df_display = df_pred.copy()
+
+# Formatear la fecha y renombrar columnas como en la tabla horaria
+df_display["DÍA"] = df_display["FECHA"].dt.strftime("%d-%m-%Y")
+df_display = df_display.rename(columns={
+    "T_AO_pred": "Ofertas aceptadas estimadas",
+    "HORA": "Hora",
+    "T_VISITAS_pred": "Visitas estimadas",
+    "T_AO_VENTA_req": "Ventas requeridas",
+    "P_EFECTIVIDAD_req": "% Efectividad requerida",
+})
+
+# --- ANÁLISIS HISTÓRICO PONDERADO POR DÍA DE LA SEMANA ---
+
+
+st.header("🔍 Flujo histórico ponderado por día de la semana")
+
+# Mapear nombres de día
+dias_map = {
+    'Monday':   'Lunes',
+    'Tuesday':  'Martes',
+    'Wednesday':'Miércoles',
+    'Thursday': 'Jueves',
+    'Friday':   'Viernes',
+    'Saturday': 'Sábado',
+    'Sunday':   'Domingo'
+}
+
+df = df_suc.copy()
+df['DíaSemana'] = df['FECHA'].dt.day_name().map(dias_map)
+df['TipoDia']   = np.where(df['FECHA'].dt.weekday < 5, 'Semana', 'Fin de Semana')
+
+# Factor de ponderación: 2 días de fin de semana para cada día de semana, 5 días de semana para cada día de fin de semana
+df['Factor'] = np.where(df['TipoDia']=='Semana', 2, 5)
+
+# Agregar sumas y aplicar factor
+grouped = (
+    df
+    .groupby('DíaSemana', observed=True)
+    .agg(
+        T_VISITAS_raw=('T_VISITAS','sum'),
+        T_AO_raw=('T_AO','sum'),
+        Factor=('Factor','first')  # mismo factor por grupo
+    )
+    .reset_index()
+)
+grouped = (
+    df
+    .groupby('DíaSemana', observed=True)
+    .agg(
+        T_VISITAS=('T_VISITAS','sum'),
+        T_AO=('T_AO','sum')
+    )
+    .reset_index()
+)
+
+fig = px.bar(
+    grouped,
+    x='DíaSemana',
+    y=['T_VISITAS', 'T_AO'],
+    barmode='group',
+    labels={
+        'value': 'Total registrado',
+        'variable': 'Métrica',
+        'DíaSemana': 'Día de la semana'
+    },
+    title='Total de Visitas y Ofertas Aceptadas por Día de la Semana'
+)
+
+# Cambiar las etiquetas de la leyenda
+fig.for_each_trace(lambda t: t.update(name='Visitas' if t.name == 'T_VISITAS' else 'Acepta Oferta'))
+
+st.plotly_chart(fig, use_container_width=True)
+
+
+# --- DISTRIBUCIÓN SEMANA vs. FIN DE SEMANA PONDERADA ---
+st.header("📊 Semana vs Fin de Semana (ponderado)")
+
+dist = (
+    df
+    .groupby('TipoDia', observed=True)
+    .agg(
+        T_VISITAS_raw=('T_VISITAS','sum'),
+        T_AO_raw=('T_AO','sum'),
+        Factor=('Factor','first')
+    )
+    .reset_index()
+)
+dist['T_VISITAS_pond'] = dist['T_VISITAS_raw'] * dist['Factor']
+dist['T_AO_pond']      = dist['T_AO_raw']      * dist['Factor']
+
+# Alinear ambos pie charts lado a lado con el mismo tamaño
+col1, col2 = st.columns(2)
+
+with col1:
+    st.plotly_chart(
+        px.pie(
+            dist,
+            names='TipoDia',
+            values='T_VISITAS_pond',
+            title='Proporción de Visitas ponderadas: Semana vs Fin de Semana',
+            hole=0.4
+        ).update_layout(height=600),
+        use_container_width=True
+    )
+
+with col2:
+    st.plotly_chart(
+        px.pie(
+            dist,
+            names='TipoDia',
+            values='T_AO_pond',
+            title='Proporción de Ofertas Aceptadas ponderadas: Semana vs Fin de Semana',
+            hole=0.4
+        ).update_layout(height=600),
+        use_container_width=True
+    )
 
 
 
-if method == "SARIMA":
-    # ——— TABLA POR HORA ———
-    st.subheader(f"📈 Predicciones para los próximos {days_proj} días")
-    st.subheader("Por hora")
-    
-    # 1) Seleccionamos únicamente las columnas de df_pred que necesitamos
-    df_hourly = df_pred[[
-        "FECHA",
-        "HORA",
-        "T_VISITAS_pred",
-        "T_AO_pred",
-        "T_AO_VENTA_req",
-        "P_EFECTIVIDAD_req"
-    ]].copy()
-    
-    # 2) Formateamos FECHA y añadimos día de la semana
-    df_hourly["Fecha registro"] = df_hourly["FECHA"].dt.strftime("%d-%m-%Y")
-    df_hourly["Día"]            = df_hourly["FECHA"].dt.day_name(locale="es")
-    
-    # 3) Renombramos cada métrica de forma explícita
-    df_hourly = df_hourly.rename(columns={
-        "HORA":                  "Hora",
-        "T_VISITAS_pred":        "Visitas estimadas",
-        "T_AO_pred":             "Ofertas aceptadas estimadas",
-        "T_AO_VENTA_req":        "Ventas requeridas",
-        "P_EFECTIVIDAD_req":     "% Efectividad requerida",
-    })
-    
-    # 4) Redondeamos y transformamos tipos
-    df_hourly["Visitas estimadas"]           = df_hourly["Visitas estimadas"].round(0).astype(int)
-    df_hourly["Ofertas aceptadas estimadas"] = df_hourly["Ofertas aceptadas estimadas"].round(0).astype(int)
-    df_hourly["Ventas requeridas"]           = df_hourly["Ventas requeridas"].round(0).astype(int)
-    df_hourly["% Efectividad requerida"]     = df_hourly["% Efectividad requerida"].round(2)
-    
-    # 5) Seleccionamos el orden final de columnas
-    df_hourly = df_hourly[[
-        "Fecha registro", "Día", "Hora",
-        "Visitas estimadas", "Ofertas aceptadas estimadas",
-        "Ventas requeridas", "% Efectividad requerida"
-    ]]
-    
-    st.dataframe(df_hourly, use_container_width=True)
-    
-    # ——— TABLA POR DÍA ———
-    st.subheader("Por día")
-    
-    df_daily = (
-        df_hourly
-        .groupby(["Fecha registro", "Día"], as_index=False)
-        .agg({
-            "Visitas estimadas":           "sum",
-            "Ofertas aceptadas estimadas": "sum",
-            "Ventas requeridas":           "sum",
-            "% Efectividad requerida":     "mean"
-        })
-    )
-    
-    # Redondeo final de efectividad
-    df_daily["% Efectividad requerida"] = df_daily["% Efectividad requerida"].round(2)
-    
-    # Orden cronológico
-    df_daily["_dt"] = pd.to_datetime(df_daily["Fecha registro"], format="%d-%m-%Y")
-    df_daily = df_daily.sort_values("_dt").drop(columns="_dt")
-    
-    st.dataframe(df_daily, use_container_width=True)
-    
-    # --- CURVA DE EFECTIVIDAD vs. DOTACIÓN (Teórica) ---
-    st.subheader("Curva de Efectividad vs. Dotación")
-    
-    # 1. Estimar parámetros históricos
-    hist = df_suc[['DOTACION','T_AO','T_AO_VENTA']].dropna()
-    if len(hist) >= 3:
-        params_eff = estimar_parametros_efectividad(hist)
-    else:
-        params_eff = {'L':1.0, 'k':0.5, 'x0_base':5.0, 'x0_factor_t_ao_venta':0.05}
-    
-    L       = params_eff['L']
-    k_def   = params_eff['k']
-    x0_base = params_eff['x0_base']
-    x0_fac  = params_eff['x0_factor_t_ao_venta']
-    
-    # 2. Parámetro k personalizable vía entero (se divide internamente entre 100)
-    # El usuario ingresa, por ejemplo, 50 para k=0.50
-    k_def_int = int(k_def * 100)
-    k_int = st.number_input(
-        "Coeficiente k = Pendiente de la Curva (T_AO)",
-        min_value=0, max_value=2000,
-        value=k_def_int,
-        step=1
-    )
-    k = k_int / 100.0
-    
-    # 3. Rango de dotación
-    min_dot   = st.number_input("Dotación mínima", 1, 100, 1, 1)
-    max_dot   = st.number_input("Dotación máxima", min_dot, 100, 9, 1)
-    dot_range = np.arange(min_dot, max_dot+1)
-    
-    # 4. Calcular x0 recalibrado usando promedio de Ventas requeridas
-    avg_ventas = np.nanmean(df_pred["T_AO_VENTA_req"]) if 'T_AO_VENTA_req' in df_pred else np.nan
-    x0_theo = x0_base if np.isnan(avg_ventas) or avg_ventas <= 0 else max(1.0, x0_base - x0_fac * avg_ventas)
-    
-    # 5. Definir funciones con k dinámico
-    def sigmoid(x, x0):
-        return 0.0 if x <= 0 else L / (1 + np.exp(-k * (x - x0)))
-    
-    def gompertz(x, x0):
-        return 0.0 if x <= 0 else L * np.exp(-np.exp(-k * (x - x0)))
-    
-    # 6. Generar curva teórica
-    ef_sig = np.array([sigmoid(x, x0_theo) for x in dot_range])
-    ef_gom = np.array([gompertz(x, x0_theo) for x in dot_range])
-    
-    df_curve = pd.DataFrame({
-        "Dotación":    np.tile(dot_range, 2),
-        "Modelo":      ["Sigmoide"] * len(dot_range) + ["Gompertz"] * len(dot_range),
-        "Efectividad": np.concatenate([ef_sig, ef_gom])
-    })
-    
-    # 7. Graficar con fondo púrpura si aplica
-    fig = px.line(
-        df_curve,
-        x="Dotación", y="Efectividad",
-        color="Modelo",
-        labels={"Dotación":"Dotación","Efectividad":"Efectividad"},
-        title=" "
-    )
-    fig.update_layout(
-        paper_bgcolor="#1a0033",
-        plot_bgcolor="#1a0033",
-        font_color="#FFFFFF",
-        title_font_color="#FFFFFF"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    df_display = df_pred.copy()
-    
-    # Formatear la fecha y renombrar columnas como en la tabla horaria
-    df_display["DÍA"] = df_display["FECHA"].dt.strftime("%d-%m-%Y")
-    df_display = df_display.rename(columns={
-        "T_AO_pred": "Ofertas aceptadas estimadas",
-        "HORA": "Hora",
-        "T_VISITAS_pred": "Visitas estimadas",
-        "T_AO_VENTA_req": "Ventas requeridas",
-        "P_EFECTIVIDAD_req": "% Efectividad requerida",
-    })
-    
-    # --- ANÁLISIS HISTÓRICO PONDERADO POR DÍA DE LA SEMANA ---
-    
-    
-    st.header("🔍 Flujo histórico ponderado por día de la semana")
-    
-    # Mapear nombres de día
-    dias_map = {
-        'Monday':   'Lunes',
-        'Tuesday':  'Martes',
-        'Wednesday':'Miércoles',
-        'Thursday': 'Jueves',
-        'Friday':   'Viernes',
-        'Saturday': 'Sábado',
-        'Sunday':   'Domingo'
-    }
-    
-    df = df_suc.copy()
-    df['DíaSemana'] = df['FECHA'].dt.day_name().map(dias_map)
-    df['TipoDia']   = np.where(df['FECHA'].dt.weekday < 5, 'Semana', 'Fin de Semana')
-    
-    # Factor de ponderación: 2 días de fin de semana para cada día de semana, 5 días de semana para cada día de fin de semana
-    df['Factor'] = np.where(df['TipoDia']=='Semana', 2, 5)
-    
-    # Agregar sumas y aplicar factor
-    grouped = (
-        df
-        .groupby('DíaSemana', observed=True)
-        .agg(
-            T_VISITAS_raw=('T_VISITAS','sum'),
-            T_AO_raw=('T_AO','sum'),
-            Factor=('Factor','first')  # mismo factor por grupo
-        )
-        .reset_index()
-    )
-    grouped = (
-        df
-        .groupby('DíaSemana', observed=True)
-        .agg(
-            T_VISITAS=('T_VISITAS','sum'),
-            T_AO=('T_AO','sum')
-        )
-        .reset_index()
-    )
-    
-    fig = px.bar(
-        grouped,
-        x='DíaSemana',
-        y=['T_VISITAS', 'T_AO'],
-        barmode='group',
-        labels={
-            'value': 'Total registrado',
-            'variable': 'Métrica',
-            'DíaSemana': 'Día de la semana'
-        },
-        title='Total de Visitas y Ofertas Aceptadas por Día de la Semana'
-    )
-    
-    # Cambiar las etiquetas de la leyenda
-    fig.for_each_trace(lambda t: t.update(name='Visitas' if t.name == 'T_VISITAS' else 'Acepta Oferta'))
-    
-    st.plotly_chart(fig, use_container_width=True)
-    
-    
-    # --- DISTRIBUCIÓN SEMANA vs. FIN DE SEMANA PONDERADA ---
-    st.header("📊 Semana vs Fin de Semana (ponderado)")
-    
-    dist = (
-        df
-        .groupby('TipoDia', observed=True)
-        .agg(
-            T_VISITAS_raw=('T_VISITAS','sum'),
-            T_AO_raw=('T_AO','sum'),
-            Factor=('Factor','first')
-        )
-        .reset_index()
-    )
-    dist['T_VISITAS_pond'] = dist['T_VISITAS_raw'] * dist['Factor']
-    dist['T_AO_pond']      = dist['T_AO_raw']      * dist['Factor']
-    
-    # Alinear ambos pie charts lado a lado con el mismo tamaño
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.plotly_chart(
-            px.pie(
-                dist,
-                names='TipoDia',
-                values='T_VISITAS_pond',
-                title='Proporción de Visitas ponderadas: Semana vs Fin de Semana',
-                hole=0.4
-            ).update_layout(height=600),
-            use_container_width=True
-        )
-    
-    with col2:
-        st.plotly_chart(
-            px.pie(
-                dist,
-                names='TipoDia',
-                values='T_AO_pond',
-                title='Proporción de Ofertas Aceptadas ponderadas: Semana vs Fin de Semana',
-                hole=0.4
-            ).update_layout(height=600),
-            use_container_width=True
-        )
-    
-    
-    
-    # --- GRÁFICO 1: Ofertas Aceptadas diario ---
-    st.subheader("📈 Histórico y Predicción de Ofertas Aceptadas (diario)")
-    
-    # Agrupar histórico por fecha
-    hist_ao = (
-        df_suc
-        .groupby('FECHA', observed=True)['T_AO']
-        .sum()
-        .reset_index()
-        .rename(columns={'T_AO':'Valor'})
-        .assign(Tipo='Histórico')
-    )
-    
-    # Agrupar predicción por fecha
-    pred_ao = (
-        df_display
-        .groupby('DÍA', observed=True)['Ofertas aceptadas estimadas']
-        .sum()
-        .reset_index()
-        .rename(columns={'DÍA':'FECHA','Ofertas aceptadas estimadas':'Valor'})
-    )
-    pred_ao['FECHA'] = pd.to_datetime(pred_ao['FECHA'], format='%d-%m-%Y')
-    pred_ao = pred_ao.sort_values('FECHA').head(days_proj).assign(Tipo='Predicción')
-    
-    # Combinar y pivotar
-    df_plot_ao = pd.concat([hist_ao, pred_ao], ignore_index=True)
-    df_pivot_ao = df_plot_ao.pivot_table(
-        index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
-    )
-    st.line_chart(df_pivot_ao)
-    
-    # --- GRÁFICO 2: Ventas Concretadas diario ---
-    st.subheader("📈 Histórico y Predicción de Ventas Concretadas (diario)")
-    
-    # Agrupar histórico de ventas
-    hist_v = (
-        df_suc
-        .groupby('FECHA', observed=True)['T_AO_VENTA']
-        .sum()
-        .reset_index()
-        .rename(columns={'T_AO_VENTA':'Valor'})
-        .assign(Tipo='Histórico')
-    )
-    
-    # Agrupar predicción de ventas requeridas
-    pred_v = (
-        df_display
-        .groupby('DÍA', observed=True)['Ventas requeridas']
-        .sum()
-        .reset_index()
-        .rename(columns={'DÍA':'FECHA','Ventas requeridas':'Valor'})
-    )
-    pred_v['FECHA'] = pd.to_datetime(pred_v['FECHA'], format='%d-%m-%Y')
-    pred_v = pred_v.sort_values('FECHA').head(days_proj).assign(Tipo='Requerida')
-    
-    # Combinar y pivotar
-    df_plot_v = pd.concat([hist_v, pred_v], ignore_index=True)
-    df_pivot_v = df_plot_v.pivot_table(
-        index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
-    )
-    st.line_chart(df_pivot_v)
+# --- GRÁFICO 1: Ofertas Aceptadas diario ---
+st.subheader("📈 Histórico y Predicción de Ofertas Aceptadas (diario)")
+
+# Agrupar histórico por fecha
+hist_ao = (
+df_suc
+    .groupby('FECHA', observed=True)['T_AO']
+    .sum()
+    .reset_index()
+    .rename(columns={'T_AO':'Valor'})
+    .assign(Tipo='Histórico')
+)
+
+# Agrupar predicción por fecha
+pred_ao = (
+    df_display
+    .groupby('DÍA', observed=True)['Ofertas aceptadas estimadas']
+    .sum()
+    .reset_index()
+    .rename(columns={'DÍA':'FECHA','Ofertas aceptadas estimadas':'Valor'})
+)
+pred_ao['FECHA'] = pd.to_datetime(pred_ao['FECHA'], format='%d-%m-%Y')
+pred_ao = pred_ao.sort_values('FECHA').head(days_proj).assign(Tipo='Predicción')
+
+# Combinar y pivotar
+df_plot_ao = pd.concat([hist_ao, pred_ao], ignore_index=True)
+df_pivot_ao = df_plot_ao.pivot_table(
+    index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
+)
+st.line_chart(df_pivot_ao)
+
+# --- GRÁFICO 2: Ventas Concretadas diario ---
+st.subheader("📈 Histórico y Predicción de Ventas Concretadas (diario)")
+
+# Agrupar histórico de ventas
+hist_v = (
+    df_suc
+    .groupby('FECHA', observed=True)['T_AO_VENTA']
+    .sum()
+    .reset_index()
+    .rename(columns={'T_AO_VENTA':'Valor'})
+    .assign(Tipo='Histórico')
+)
+
+# Agrupar predicción de ventas requeridas
+pred_v = (
+    df_display
+    .groupby('DÍA', observed=True)['Ventas requeridas']
+    .sum()
+    .reset_index()
+    .rename(columns={'DÍA':'FECHA','Ventas requeridas':'Valor'})
+)
+pred_v['FECHA'] = pd.to_datetime(pred_v['FECHA'], format='%d-%m-%Y')
+pred_v = pred_v.sort_values('FECHA').head(days_proj).assign(Tipo='Requerida')
+
+# Combinar y pivotar
+df_plot_v = pd.concat([hist_v, pred_v], ignore_index=True)
+df_pivot_v = df_plot_v.pivot_table(
+    index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
+)
+st.line_chart(df_pivot_v)
 
 
 # --- Agregar selector de rango de días al inicio ---
@@ -629,17 +581,17 @@ st.subheader("🔍 Selección de rango de análisis")
 
 # Opciones para el dropdown
 opciones_rango = {
-    "Últimos 30 días": 30,
-    "Últimos 60 días": 60,
-    "Últimos 90 días": 90,
-    "Toda la data disponible": None
+"Últimos 30 días": 30,
+"Últimos 60 días": 60,
+"Últimos 90 días": 90,
+"Toda la data disponible": None
 }
 
 # Crear el selector
 rango_seleccionado = st.selectbox(
-    "Selecciona el rango de días para el análisis:",
-    options=list(opciones_rango.keys()),
-    index=2  # Por defecto selecciona 90 días
+"Selecciona el rango de días para el análisis:",
+options=list(opciones_rango.keys()),
+index=2  # Por defecto selecciona 90 días
 )
 
 # Obtener el valor numérico correspondiente

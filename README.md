@@ -3,16 +3,15 @@
 Este proyecto contiene un conjunto de scripts y una aplicación web para predecir
 la dotación y otras métricas operacionales de distintas sucursales. La interfaz
 web está implementada con **Streamlit** y utiliza modelos de series de tiempo
-entrenados con **SARIMA**.
+entrenados con **Prophet**.
 
 ## Contenido del repositorio
 
 - `app.py` – Aplicación Streamlit para visualizar pronósticos y métricas.
-- `train_models.py` – Entrena los modelos SARIMA y genera pronósticos Prophet.
+- `train_models.py` – Entrena modelos Prophet y genera pronósticos.
 - `deploy_prophet.py` – Pronósticos Prophet y gráficos para visitas y acepta oferta.
 - `preprocessing.py` y `utils.py` – Funciones auxiliares para
   procesamiento y modelamiento.
-- `models_sarima/` – Modelos ya entrenados en formato `pkl`.
 - `data/` – Archivos de datos de ejemplo (`DOTACION_EFECTIVIDAD.xlsx`,
   `regions.xlsx`, etc.).
 
@@ -33,7 +32,7 @@ Si deseas generar nuevamente los modelos, ejecuta:
 python train_models.py
 ```
 
-Los modelos resultantes se guardarán en la carpeta `models_sarima/`.
+Los modelos resultantes se guardarán en la carpeta `models_prophet/`.
 
 
 Para generar pronósticos con Prophet de *T_VISITAS* y *T_AO* y guardar una
