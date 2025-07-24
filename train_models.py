@@ -4,14 +4,14 @@ from datetime import timedelta
 import joblib
 import pandas as pd
 import numpy as np
-from statsmodels.tsa.statespace.sarimax import SARIMAX
+from prophet import Prophet
 from preprocessing import forecast_dotacion_prophet, forecast_target_prophet
 
 
 
 
 
-MODEL_DIR = "models_sarima"
+MODEL_DIR = "models_prophet"
 PROPHET_DIR = "models_prophet"
 TARGETS = ["T_VISITAS", "T_AO"]
 HOURS_RANGE = list(range(9, 22))
@@ -28,7 +28,7 @@ def train_models(
     noise_scale: float = 0.0,
     changepoint_prior_scale: float = 0.5,
 ) -> None:
-    """Train a SARIMA model for each branch and target and save Prophet forecasts."""
+    """Train a Prophet model for each branch and target and save forecasts."""
     os.makedirs(MODEL_DIR, exist_ok=True)
     os.makedirs(PROPHET_DIR, exist_ok=True)
 
@@ -56,24 +56,19 @@ def train_models(
             .fillna(0)
         )
 
-        exog = pd.get_dummies(df_branch.index.weekday, drop_first=False)
-        exog = exog.astype(float)  # Ensure numeric dtype to avoid bool diff issue
-        # Ensure exogenous variables use the same index as the target series
-        exog.index = df_branch.index
-
         for target in TARGETS:
-            series = df_branch[target]
-            model = SARIMAX(
-                series,
-                exog=exog,
-                order=(1, 1, 1),
-                seasonal_order=(1, 1, 1, 5),
-                enforce_stationarity=False,
-                enforce_invertibility=False,
-            ).fit(disp=False)
+            df_p = df_branch[[target]].reset_index().rename(columns={"FECHA": "ds", target: "y"})
+            model = Prophet(
+                daily_seasonality=True,
+                weekly_seasonality=True,
+                yearly_seasonality=True,
+                changepoint_prior_scale=changepoint_prior_scale,
+            )
+            model.add_country_holidays(country_name="CL")
+            model.fit(df_p)
 
-            fname = f"sarima_{target}_{branch}.pkl"
-            joblib.dump({"model": model, "exog_cols": exog.columns.tolist()}, os.path.join(MODEL_DIR, fname))
+            fname = f"prophet_{target}_{branch}.pkl"
+            joblib.dump(model, os.path.join(MODEL_DIR, fname))
         # --- Prophet forecast for DOTACION ---
         df_dot = (
             df[df["COD_SUC"] == branch][["FECHA", "DOTACION"]]
@@ -104,7 +99,7 @@ def train_models(
 
 
 def _load_model(target: str, branch: str):
-    fname = f"sarima_{target}_{branch}.pkl"
+    fname = f"prophet_{target}_{branch}.pkl"
     path = os.path.join(MODEL_DIR, fname)
     return joblib.load(path)
 
@@ -174,15 +169,11 @@ def generate_predictions(
         return w / w.sum()
 
     for t in TARGETS:
-        model = None
         try:
-            mdl = _load_model(t, branch)
-            model = mdl["model"]
-            exog_cols = mdl["exog_cols"]
-            exog_future = pd.get_dummies(pred_index.weekday, drop_first=False)
-            exog_future = exog_future.astype(float).reindex(columns=exog_cols, fill_value=0.0)
-            exog_future.index = pred_index
-            daily_preds = model.forecast(steps=horizon, exog=exog_future)
+            model = _load_model(t, branch)
+            future = model.make_future_dataframe(periods=horizon, freq="B")
+            forecast = model.predict(future)
+            daily_preds = forecast.set_index("ds").reindex(pred_index)["yhat"].fillna(0).values
         except FileNotFoundError:
             daily_preds = []
             for d in pred_index:
@@ -197,10 +188,7 @@ def generate_predictions(
             daily_preds = daily_preds.values
 
         if noise_scale > 0:
-            if model is not None:
-                resid_std = float(np.sqrt(getattr(model, "sigma2", 0.0)))
-            else:
-                resid_std = float(df_branch[t].std())
+            resid_std = float(df_branch[t].std())
             noise = np.random.normal(scale=resid_std * noise_scale, size=len(daily_preds))
             daily_preds = np.clip(daily_preds + noise, a_min=0, a_max=None)
 
@@ -221,7 +209,7 @@ def generate_predictions(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train SARIMA models and Prophet forecasts")
+    parser = argparse.ArgumentParser(description="Train Prophet models and forecasts")
     parser.add_argument("--horizon_days", type=int, default=365, help="Days to forecast with Prophet")
     parser.add_argument("--noise_scale", type=float, default=0.0, help="Gaussian noise scale for Prophet forecast")
     parser.add_argument("--changepoint_prior_scale", type=float, default=0.5, help="Prophet changepoint prior scale")
