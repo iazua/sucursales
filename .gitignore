@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 # Prophet forecasts
 models_prophet/
+!models_prophet/.gitkeep
