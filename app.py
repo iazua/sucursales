@@ -17,6 +17,7 @@ from plotly.subplots import make_subplots
 # https://brand.ripley.cl
 PRIMARY_COLOR   = "#4F2D7F"  # Minsk
 DARK_BG_COLOR   = "#361860"  # Scarlet Gum
+TABLE_BG_COLOR  = DARK_BG_COLOR
 ACCENT_COLOR    = "#F1AC4B"  # Sandy Brown
 WHITE           = "#FFFFFF"
 BLACK           = "#000000"
@@ -39,6 +40,7 @@ st.markdown(
     :root {{
       --primary: {PRIMARY_COLOR};
       --dark-bg: {DARK_BG_COLOR};
+      --table-bg: {TABLE_BG_COLOR};
       --accent: {ACCENT_COLOR};
       --white: {WHITE};
       --black: {BLACK};
@@ -49,7 +51,7 @@ st.markdown(
     }}
     /* DataFrame: fondo de la tabla y de las celdas */
     .stDataFrame div[role="table"] {{
-      background-color: var(--dark-bg) !important;
+      background-color: var(--table-bg) !important;
       color: var(--white);
     }}
     /* Para los encabezados de tabla */
@@ -100,15 +102,15 @@ st.markdown(
     }}
     /* Tablas incrustadas en el fondo */
     .stDataFrame, .stTable {{
-      background-color: var(--dark-bg) !important;
+      background-color: var(--table-bg) !important;
       border: none;
     }}
     /* Ajustes extra para DataFrame en la pestaña Forecast */
     div[data-testid="stDataFrame"] > div {{
-      background-color: var(--dark-bg) !important;
+      background-color: var(--table-bg) !important;
     }}
     div[data-testid="stDataFrame"] table {{
-      background-color: var(--dark-bg) !important;
+      background-color: var(--table-bg) !important;
       color: var(--white) !important;
     }}
     div[data-testid="stDataFrame"] th {{
@@ -116,7 +118,7 @@ st.markdown(
       color: var(--white) !important;
     }}
     .stTable table {{
-      background-color: var(--dark-bg) !important;
+      background-color: var(--table-bg) !important;
       color: var(--white);
     }}
     .stTable th {{
