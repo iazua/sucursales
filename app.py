@@ -552,6 +552,8 @@ with tab_pred:
     )
     st.plotly_chart(fig, use_container_width=True)
 
+
+
     # --- GRÁFICO 2: Ventas Concretadas diario ---
     st.subheader("📈 Histórico y Predicción de Ventas Concretadas")
 
@@ -587,6 +589,49 @@ with tab_pred:
         .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
     )
     fig = px.line(df_plot_v_long, x='FECHA', y='Valor', color='Tipo')
+    fig.update_layout(
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # --- GRÁFICO 3: Visitas diario ---
+    st.subheader("📈 Histórico y Predicción de Visitas")
+
+    # Agrupar histórico de visitas
+    hist_vis = (
+        df_suc
+        .groupby('FECHA', observed=True)['T_VISITAS']
+        .sum()
+        .reset_index()
+        .rename(columns={'T_VISITAS': 'Valor'})
+        .assign(Tipo='Histórico')
+    )
+
+    # Agrupar predicción de visitas estimadas
+    pred_vis = (
+        df_display
+        .groupby('DÍA', observed=True)['Visitas estimadas']
+        .sum()
+        .reset_index()
+        .rename(columns={'DÍA': 'FECHA', 'Visitas estimadas': 'Valor'})
+    )
+    pred_vis['FECHA'] = pd.to_datetime(pred_vis['FECHA'], format='%d-%m-%Y')
+    pred_vis = pred_vis.sort_values('FECHA').head(days_proj).assign(Tipo='Predicción')
+
+    # Combinar y pivotar
+    df_plot_vis = pd.concat([hist_vis, pred_vis], ignore_index=True)
+    df_pivot_vis = df_plot_vis.pivot_table(
+        index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
+    )
+    df_plot_vis_long = (
+        df_pivot_vis
+        .reset_index()
+        .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
+    )
+    fig = px.line(df_plot_vis_long, x='FECHA', y='Valor', color='Tipo')
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
