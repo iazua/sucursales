@@ -276,8 +276,15 @@ view_state = pdk.ViewState(
     bearing=90
 )
 
-# Todas las secciones se muestran en una sola página
-tab_mapa = tab_pred = tab_hist = tab_turno = st.container()
+# Tabs para organizar la aplicación de forma más clara
+tab_mapa, tab_pred, tab_hist, tab_turno = st.tabs(
+    [
+        "Mapa de Zonas",
+        "Predicciones",
+        "Histórico Ponderado",
+        "Análisis por Turno",
+    ]
+)
 
 # 7) Renderizamos las cuatro capas en un solo mapa con la nueva vista
 with tab_mapa:
