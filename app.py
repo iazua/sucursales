@@ -26,21 +26,35 @@ st.markdown(
     <style>
     /* Fondo general */
     .stApp, .css-1d391kg {
-      background-color: #1a0033;
+      background-color: #361860;
     }
     /* DataFrame: fondo de la tabla y de las celdas */
     .stDataFrame div[role="table"] {
-      background-color: #1a0033 !important;
+      background-color: #361860 !important;
       color: #FFFFFF;
     }
     /* Para los encabezados de tabla */
     .stDataFrame th {
-      background-color: #330066 !important;
+      background-color: #4F2D7F !important;
       color: #FFFFFF;
     }
     /* Para las gráficas, el contenedor externo */
     .stPlotlyChart div {
-      background-color: #1a0033 !important;
+      background-color: #361860 !important;
+    }
+    /* Botones */
+    .stButton>button {
+      background-color: #4F2D7F;
+      color: #FFFFFF;
+      border: none;
+    }
+    .stButton>button:hover {
+      background-color: #F1AC4B;
+      color: #361860;
+    }
+    /* Sliders */
+    div[data-baseweb="slider"] span {
+      background-color: #F1AC4B !important;
     }
     </style>
     """,
@@ -135,7 +149,7 @@ layer_vis = pdk.Layer(
     data=df_zona,
     pickable=True,
     get_position='[lon, lat]',
-    get_fill_color='[200, 30, 30, 160]',
+    get_fill_color='[241, 172, 75, 160]',
     get_radius='pct_vis * 400000',
     auto_highlight=True,
 )
@@ -145,7 +159,7 @@ layer_ao = pdk.Layer(
     data=df_zona,
     pickable=True,
     get_position='[lon, lat]',
-    get_fill_color='[200, 30, 30, 160]',
+    get_fill_color='[241, 172, 75, 160]',
     get_radius='pct_ao * 400000',
     auto_highlight=True,
 )
@@ -155,7 +169,7 @@ layer_ao_venta = pdk.Layer(
     data=df_zona,
     pickable=True,
     get_position='[lon, lat]',
-    get_fill_color='[200, 30, 30, 160]',
+    get_fill_color='[241, 172, 75, 160]',
     get_radius='pct_ao_venta * 400000',
     auto_highlight=True,
 )
@@ -165,7 +179,7 @@ layer_efectividad = pdk.Layer(
     data=df_zona,
     pickable=True,
     get_position='[lon, lat]',
-    get_fill_color='[200, 30, 30, 160]',
+    get_fill_color='[241, 172, 75, 160]',
     get_radius='pct_efectividad * 10000',
     auto_highlight=True,
 )
@@ -201,7 +215,7 @@ with tab_mapa:
                 "<b>Ofertas aceptadas de venta:</b> {T_AO_VENTA} ({label_ao_venta})<br>"
                 "<b>Efectividad:</b> {label_efectividad}"
             ),
-            "style": {"backgroundColor":"#F0F0F0","color":"#000"}
+            "style": {"backgroundColor":"#F1AC4B","color":"#361860"}
         }
     ), use_container_width=True)
 
@@ -395,8 +409,8 @@ with tab_pred:
         title=" "
     )
     fig.update_layout(
-        paper_bgcolor="#1a0033",
-        plot_bgcolor="#1a0033",
+        paper_bgcolor="#361860",
+        plot_bgcolor="#361860",
         font_color="#FFFFFF",
         title_font_color="#FFFFFF"
     )
@@ -737,8 +751,8 @@ with tab_turno:
     )
     fig.update_xaxes(side='top')
     fig.update_layout(
-        plot_bgcolor='#1a0033',
-        paper_bgcolor='#1a0033',
+        plot_bgcolor='#361860',
+        paper_bgcolor='#361860',
         font_color='#FFFFFF',
         title_font_color='#FFFFFF'
     )
@@ -787,8 +801,8 @@ with tab_turno:
         height=900,
         showlegend=False,
         title_text=f'Efectividad diaria por turno ({rango_seleccionado})',
-        plot_bgcolor='#1a0033',
-        paper_bgcolor='#1a0033',
+        plot_bgcolor='#361860',
+        paper_bgcolor='#361860',
         font_color='#FFFFFF',
         margin=dict(t=80, b=40, l=60, r=40)
     )
@@ -844,8 +858,8 @@ with tab_turno:
     )
     fig.update_layout(
         yaxis_tickformat='.2f',
-        plot_bgcolor='#1a0033',
-        paper_bgcolor='#1a0033',
+        plot_bgcolor='#361860',
+        paper_bgcolor='#361860',
         font_color='#FFFFFF',
         title_font_color='#FFFFFF',
         legend_title_font_color='#FFFFFF'
@@ -882,8 +896,8 @@ with tab_turno:
     
     # 4) Estilo acorde al tema oscuro
     fig.update_layout(
-        plot_bgcolor='#1a0033',
-        paper_bgcolor='#1a0033',
+        plot_bgcolor='#361860',
+        paper_bgcolor='#361860',
         font_color='#FFFFFF',
         title_font_color='#FFFFFF',
         yaxis_tickformat='.2f'
@@ -1128,8 +1142,8 @@ with tab_turno:
         title=f'Distribuci\u00f3n de efectividad por turno ({rango_seleccionado})'
     )
     fig_box_eff.update_layout(
-        plot_bgcolor='#1a0033',
-        paper_bgcolor='#1a0033',
+        plot_bgcolor='#361860',
+        paper_bgcolor='#361860',
         font_color='#FFFFFF',
         title_font_color='#FFFFFF',
         yaxis_tickformat='.2f'
