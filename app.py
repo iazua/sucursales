@@ -339,15 +339,9 @@ k_def   = params_eff['k']
 x0_base = params_eff['x0_base']
 x0_fac  = params_eff['x0_factor_t_ao_venta']
 
-# 2. Parámetro k personalizable, inicializado con el valor por defecto de la sucursal
-k = st.number_input(
-    "Coeficiente k = Pendiente de la Curva (T_AO)",
-    min_value=0.0, max_value=2.0,
-    value=float(k_def),
-    step=0.01,
-    format="%.2f",
-    key=f"k_{cod_suc}"
-)
+# 2. Coeficiente k estimado para la sucursal
+k = float(k_def)
+st.write(f"Coeficiente k estimado: {k:.2f}")
 
 # 3. Rango de dotación fijo entre 0 y 12 (enteros)
 dot_range = np.arange(0, 13)
@@ -395,14 +389,6 @@ fig.update_layout(
     plot_bgcolor="#1a0033",
     font_color="#FFFFFF",
     title_font_color="#FFFFFF"
-)
-fig.add_vline(
-    x=dot_opt,
-    line_dash="dash",
-    line_color="yellow",
-    annotation_text=f"X óptimo: {dot_opt}",
-    annotation_position="top left",
-    annotation_font_color="yellow",
 )
 fig.add_trace(
     go.Scatter(
