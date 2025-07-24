@@ -133,7 +133,7 @@ col1, col2, col3 = st.columns([1, 1, 1])
 with col2:
     st.image(
         "https://upload.wikimedia.org/wikipedia/commons/2/27/Logo_Ripley_banco_2.png",
-        width=600
+        width=750
     )
 
 
