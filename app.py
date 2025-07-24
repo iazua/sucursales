@@ -293,11 +293,8 @@ with tab_pred:
     method = "Prophet"
 
     # --- CONTROL DE HORIZONTE DE PROYECCIÓN ---
-    days_proj = st.slider(
-        "Días a proyectar",
-        min_value=1, max_value=HORIZON_DAYS,
-        value=HORIZON_DAYS, step=1,
-    )
+    # Se fija de forma estática a 306 días
+    days_proj = 306
     sucursales = sorted(df["COD_SUC"].unique())
     cod_suc = st.selectbox("Selecciona una sucursal", sucursales)
     
