@@ -513,25 +513,15 @@ with tab_pred:
         labels={"Dotación": "Dotación", "Efectividad": "Efectividad"},
         title=" "
     )
-    fig.update_traces(line=dict(color=ACCENT_COLOR))
     fig.update_layout(
-        paper_bgcolor=PRIMARY_BG,
-        plot_bgcolor=PRIMARY_BG,
-        font_color=BLACK,
-        title_font_color=BLACK
+        paper_bgcolor=DARK_BG_COLOR,
+        plot_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE
     )
     # Ajustar el rango inicial del eje X para que comience en 1
-    fig.update_xaxes(
-        range=[dot_range.min(), dot_range.max()],
-        rangeslider_visible=True,
-        rangeslider=dict(
-            bgcolor=PRIMARY_BG,
-            bordercolor=ACCENT_COLOR,
-            borderwidth=1,
-            thickness=0.05,
-            yaxis=dict(visible=False)
-        )
-    )
+    fig.update_xaxes(range=[dot_range.min(), dot_range.max()],
+                     rangeslider_visible=True)
     st.plotly_chart(fig, use_container_width=True)
 
     df_display = df_pred.copy()
