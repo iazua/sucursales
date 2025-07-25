@@ -1282,7 +1282,7 @@ with tab_turno:
     st.markdown("---")
 
     # --- NUEVO: Ranking de efectividad por turno ---
-    st.subheader("🏆 Turnos con mejor y peor efectividad")
+    st.subheader("🏆 Efectividad por Turno")
 
     # 1) Efectividad y dotación promedio por turno
     df_perf = (
