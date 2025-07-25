@@ -520,7 +520,8 @@ with tab_pred:
         title_font_color=WHITE
     )
     # Ajustar el rango inicial del eje X para que comience en 1
-    fig.update_xaxes(range=[dot_range.min(), dot_range.max()])
+    fig.update_xaxes(range=[dot_range.min(), dot_range.max()],
+                     rangeslider_visible=True)
     st.plotly_chart(fig, use_container_width=True)
 
     df_display = df_pred.copy()
@@ -583,6 +584,7 @@ with tab_pred:
         font_color=WHITE,
         title_font_color=WHITE
     )
+    fig.update_xaxes(rangeslider_visible=True)
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -634,6 +636,7 @@ with tab_pred:
         font_color=WHITE,
         title_font_color=WHITE
     )
+    fig.update_xaxes(rangeslider_visible=True)
     st.plotly_chart(fig, use_container_width=True)
 
     # --- GRÁFICO 3: Visitas diario ---
@@ -683,6 +686,7 @@ with tab_pred:
         font_color=WHITE,
         title_font_color=WHITE
     )
+    fig.update_xaxes(rangeslider_visible=True)
     st.plotly_chart(fig, use_container_width=True)
 
 # --- ANÁLISIS HISTÓRICO PONDERADO POR DÍA DE LA SEMANA ---
@@ -1015,7 +1019,8 @@ with tab_turno:
         fig.update_yaxes(row=i, col=1, tickformat='.2f', title_text='Efectividad')
 
     # 4) Solo la última fila muestra etiquetas X
-    fig.update_xaxes(row=4, col=1, tickangle=-45, title_text='Fecha')
+    fig.update_xaxes(row=4, col=1, tickangle=-45, title_text='Fecha',
+                     rangeslider_visible=True)
 
     # 5) Diseño general
     fig.update_layout(
