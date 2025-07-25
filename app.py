@@ -27,9 +27,9 @@ ACCENT_RGBA = "[241, 172, 75, 160]"  # Sandy Brown con opacidad
 PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
 # Mapeo de colores para series históricas y de predicción
 COLOR_DISCRETE_MAP = {
-    "Histórico": PRIMARY_BG,
-    "Predicción": ACCENT_COLOR,
-    "Requerida": ACCENT_COLOR,
+    "Histórico": ACCENT_COLOR,
+    "Predicción": PRIMARY_BG,
+    "Requerida": PRIMARY_BG,
 }
 # ---------------------------------------------------------------------------
 
