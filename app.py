@@ -31,10 +31,10 @@ COLOR_DISCRETE_MAP = {
     "Predicción": PRIMARY_BG,
     "Requerida": PRIMARY_BG,
 }
-# Colores para tipos de día en gráficas de torta
-PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
-# Secuencia de colores por defecto para otras gráficas
+# Colores para series donde se muestran dos categorías
+# (e.g. Semana vs Fin de Semana) en gráficas de torta o barras
 COLOR_SEQUENCE = [ACCENT_COLOR, PRIMARY_BG]
+PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
 # ---------------------------------------------------------------------------
 
 # --- CONSTANTES ---
@@ -782,7 +782,8 @@ with tab_hist:
                 values='T_VISITAS_pond',
                 title='Proporción de Visitas ponderadas: Semana vs Fin de Semana',
                 hole=0.4,
-                color_discrete_map=PIE_COLOR_MAP
+                color_discrete_sequence=COLOR_SEQUENCE,
+                category_orders={'TipoDia': ['Semana', 'Fin de Semana']}
             ).update_layout(
                 height=600,
                 plot_bgcolor=DARK_BG_COLOR,
@@ -801,7 +802,8 @@ with tab_hist:
                 values='T_AO_pond',
                 title='Proporción de Ofertas Aceptadas ponderadas: Semana vs Fin de Semana',
                 hole=0.4,
-                color_discrete_map=PIE_COLOR_MAP
+                color_discrete_sequence=COLOR_SEQUENCE,
+                category_orders={'TipoDia': ['Semana', 'Fin de Semana']}
             ).update_layout(
                 height=600,
                 plot_bgcolor=DARK_BG_COLOR,
