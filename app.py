@@ -60,6 +60,10 @@ st.markdown(
     /* Fondo general */
     .stApp, .css-1d391kg {{
       background-color: var(--dark-bg);
+      color: var(--white);
+    }}
+    h1, h2, h3, h4, h5, h6 {{
+      color: var(--accent);
     }}
     /* DataFrame: fondo de la tabla y de las celdas */
     .stDataFrame div[role="table"] {{
@@ -149,6 +153,16 @@ st.markdown(
     .stSelectbox div[data-baseweb="select"] > div:focus-within {{
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(241,172,75,0.4);
+    }}
+    /* Tabs principales */
+    div[role="tablist"] > button {{
+      background-color: var(--primary);
+      color: var(--white);
+      border: none;
+    }}
+    div[role="tablist"] > button[aria-selected="true"] {{
+      background-color: var(--accent);
+      color: var(--black);
     }}
     </style>
     """,
@@ -303,7 +317,7 @@ tab_mapa, tab_pred, tab_hist, tab_turno = st.tabs(
 # 7) Renderizamos las cuatro capas en un solo mapa con la nueva vista
 with tab_mapa:
     st.pydeck_chart(pdk.Deck(
-        map_style='mapbox://styles/mapbox/light-v9',
+        map_style='mapbox://styles/mapbox/dark-v9',
         initial_view_state=view_state,
         layers=[layer_vis, layer_ao, layer_ao_venta, layer_efectividad],
         tooltip={
