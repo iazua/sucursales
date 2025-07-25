@@ -508,9 +508,11 @@ with tab_pred:
     # 7. Graficar con fondo púrpura si aplica
     fig = px.line(
         df_curve,
-        x="Dotación", y="Efectividad",
+        x="Dotación",
+        y="Efectividad",
         color="Modelo",
         labels={"Dotación": "Dotación", "Efectividad": "Efectividad"},
+        color_discrete_sequence=[ACCENT_COLOR, PRIMARY_BG],
         title=" "
     )
     fig.update_layout(
@@ -519,9 +521,12 @@ with tab_pred:
         font_color=WHITE,
         title_font_color=WHITE
     )
-    # Ajustar el rango inicial del eje X para que comience en 1
-    fig.update_xaxes(range=[dot_range.min(), dot_range.max()],
-                     rangeslider_visible=True)
+    # Ajustar el rango inicial del eje X para que comience en 1 y mostrar un
+    # rango deslizante similar al utilizado en la gráfica de ventas
+    fig.update_xaxes(
+        range=[dot_range.min(), dot_range.max()],
+        rangeslider_visible=True,
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     df_display = df_pred.copy()
