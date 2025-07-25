@@ -31,6 +31,10 @@ COLOR_DISCRETE_MAP = {
     "Predicción": PRIMARY_BG,
     "Requerida": PRIMARY_BG,
 }
+# Colores para tipos de día en gráficas de torta
+PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
+# Secuencia de colores por defecto para otras gráficas
+COLOR_SEQUENCE = [ACCENT_COLOR, PRIMARY_BG]
 # ---------------------------------------------------------------------------
 
 # --- CONSTANTES ---
@@ -730,6 +734,7 @@ with tab_hist:
         x='DíaSemana',
         y=['T_VISITAS', 'T_AO'],
         barmode='group',
+        color_discrete_sequence=COLOR_SEQUENCE,
         labels={
             'value': 'Total registrado',
             'variable': 'Métrica',
@@ -776,7 +781,8 @@ with tab_hist:
                 names='TipoDia',
                 values='T_VISITAS_pond',
                 title='Proporción de Visitas ponderadas: Semana vs Fin de Semana',
-                hole=0.4
+                hole=0.4,
+                color_discrete_map=PIE_COLOR_MAP
             ).update_layout(
                 height=600,
                 plot_bgcolor=DARK_BG_COLOR,
@@ -794,7 +800,8 @@ with tab_hist:
                 names='TipoDia',
                 values='T_AO_pond',
                 title='Proporción de Ofertas Aceptadas ponderadas: Semana vs Fin de Semana',
-                hole=0.4
+                hole=0.4,
+                color_discrete_map=PIE_COLOR_MAP
             ).update_layout(
                 height=600,
                 plot_bgcolor=DARK_BG_COLOR,
@@ -872,6 +879,7 @@ with tab_turno:
         x='Turno',
         y=metrics_graph,
         barmode='group',
+        color_discrete_sequence=COLOR_SEQUENCE,
         labels={
             'T_VISITAS': 'Visitas',
             'T_AO': 'Acepta Oferta',
@@ -955,7 +963,7 @@ with tab_turno:
     # 5) Dibujar heatmap con Plotly Express
     fig = px.imshow(
         pivot_pct,
-        color_continuous_scale='Greens',
+        color_continuous_scale=[PRIMARY_BG, ACCENT_COLOR],
         labels={'x': 'Turno', 'y': 'Día de la semana', 'color': 'Conversión (%)'},
         title=f'Conversión visitas → ofertas aceptadas (%) ({rango_seleccionado})',
         aspect='auto'
@@ -1059,6 +1067,7 @@ with tab_turno:
         y='Efectividad',
         color='Turno',
         barmode='group',
+        color_discrete_sequence=COLOR_SEQUENCE,
         category_orders={'DíaSemana': orden_dias, 'Turno': orden_turnos},
         labels={
             'DíaSemana': 'Día de la semana',
@@ -1098,6 +1107,7 @@ with tab_turno:
         x='Turno',
         y='Productividad',
         points='outliers',
+        color_discrete_sequence=[ACCENT_COLOR],
         labels={
             'Turno': 'Franja horaria',
             'Productividad': 'T_AO / DOTACION'
@@ -1337,6 +1347,7 @@ with tab_turno:
         x='Turno',
         y='P_EFECTIVIDAD',
         points='outliers',
+        color_discrete_sequence=[ACCENT_COLOR],
         labels={'Turno': 'Turno', 'P_EFECTIVIDAD': 'Efectividad'},
         title=f'Distribuci\u00f3n de efectividad por turno ({rango_seleccionado})'
     )
