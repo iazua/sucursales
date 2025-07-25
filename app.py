@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import os
 from datetime import timedelta
 from train_models import generate_predictions
 import plotly.express as px
-from preprocessing import assign_turno, prepare_features
+from preprocessing import assign_turno
 from utils import calcular_efectividad, estimar_dotacion_optima, estimar_parametros_efectividad
 import pydeck as pdk
 import plotly.graph_objects as go
@@ -33,8 +32,6 @@ PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
 HOURS_RANGE = list(range(9, 22))
 # Fecha límite para las proyecciones automáticas
 PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
-# Carpeta de pronósticos Prophet
-PROPHET_DIR = "models_prophet"
 
 # Mapeo de días de la semana en inglés a español
 DAY_NAME_MAP_ES = {

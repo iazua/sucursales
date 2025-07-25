@@ -167,10 +167,8 @@ def estimar_parametros_efectividad(df_historico):
         return params
     except RuntimeError:
         return {'L': 1.0, 'k': 0.5, 'x0_base': 5.0, 'x0_factor_t_ao_venta': 0.05}
-    except ValueError as e:
-        print(f"ValueError en curve_fit: {e}")
-        print(f"p0 usado: {p0 if 'p0' in locals() else 'No definido'}")
-        print(f"bounds usados: {bounds if 'bounds' in locals() else 'No definido'}")
+    except ValueError:
+        # En caso de error durante el ajuste, se devuelven valores por defecto
         return {'L': 1.0, 'k': 0.5, 'x0_base': 5.0, 'x0_factor_t_ao_venta': 0.05}
 
 
@@ -184,7 +182,7 @@ def estimar_dotacion_optima(t_ao_preds, t_ao_venta_preds, efectividad_deseada=0.
         return 0, 0.0
 
     if params_efectividad is None:
-        print("Advertencia: Usando parámetros de efectividad por defecto para estimar dotación óptima.")
+        # Si no se proporcionan parámetros, se utilizan valores por defecto
         params_efectividad = {'L': 1.0, 'k': 0.5, 'x0_base': 5.0, 'x0_factor_t_ao_venta': 0.05}
 
     t_ao_preds_arr = np.array(t_ao_preds)
@@ -229,8 +227,8 @@ def estimar_dotacion_optima(t_ao_preds, t_ao_venta_preds, efectividad_deseada=0.
         # Usar 'bounded' method que es bueno para optimización escalar con límites
         res = minimize_scalar(objective_function, bounds=bounds_opt, method='bounded')
         dotacion_optima = int(np.round(res.x)) if res.success else int(np.mean(bounds_opt))
-    except Exception as e:
-        print(f"Excepción en minimize_scalar: {e}")
+    except Exception:
+        # Ante cualquier error, se usa la media del rango como estimación
         dotacion_optima = int(np.mean(bounds_opt))
 
     # Asegurar dotación mínima de 1 si hay trabajo y la optimización dio 0 (aunque bounds_opt empieza en 1)

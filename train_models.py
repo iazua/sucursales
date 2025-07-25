@@ -7,15 +7,10 @@ import numpy as np
 from prophet import Prophet
 from preprocessing import forecast_dotacion_prophet, forecast_target_prophet
 
-
-
-
-
 MODEL_DIR = "models_prophet"
 PROPHET_DIR = "models_prophet"
 TARGETS = ["T_VISITAS", "T_AO"]
 HOURS_RANGE = list(range(9, 22))
-
 
 def load_data(path: str = "data/DOTACION_EFECTIVIDAD.xlsx") -> pd.DataFrame:
     """Load raw data from Excel."""
