@@ -35,6 +35,8 @@ COLOR_DISCRETE_MAP = {
 PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
 # Secuencia de colores por defecto para otras gráficas
 COLOR_SEQUENCE = [ACCENT_COLOR, PRIMARY_BG]
+# Paleta de colores para los cuatro turnos
+TURNOS_COLOR_SEQUENCE = px.colors.qualitative.Plotly[:4]
 # ---------------------------------------------------------------------------
 
 # --- CONSTANTES ---
@@ -1067,7 +1069,7 @@ with tab_turno:
         y='Efectividad',
         color='Turno',
         barmode='group',
-        color_discrete_sequence=COLOR_SEQUENCE,
+        color_discrete_sequence=TURNOS_COLOR_SEQUENCE,
         category_orders={'DíaSemana': orden_dias, 'Turno': orden_turnos},
         labels={
             'DíaSemana': 'Día de la semana',
