@@ -12,3 +12,4 @@ holidays
 workalendar
 openpyxl
 prophet
+streamlit-authenticator
