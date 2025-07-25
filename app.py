@@ -7,6 +7,7 @@ from train_models import generate_predictions
 import plotly.express as px
 from preprocessing import assign_turno, prepare_features
 from utils import calcular_efectividad, estimar_dotacion_optima, estimar_parametros_efectividad
+import streamlit_authenticator as stauth
 import pydeck as pdk
 import plotly.graph_objects as go
 
@@ -164,6 +165,39 @@ with col2:
         "https://upload.wikimedia.org/wikipedia/commons/2/27/Logo_Ripley_banco_2.png",
         width=750
     )
+
+
+# --- AUTENTICACIÓN ---
+names = ["Administrador"]
+usernames = ["admin"]
+passwords = ["admin123"]
+hashed_passwords = stauth.Hasher(passwords).generate()
+
+# Adapt credentials to the current streamlit-authenticator API
+credentials = {
+    "usernames": {
+        user: {"name": name, "password": pwd}
+        for user, name, pwd in zip(usernames, names, hashed_passwords)
+    }
+}
+
+authenticator = stauth.Authenticate(
+    credentials,
+    "auth_cookie",
+    "some_signature_key",
+    cookie_expiry_days=1,
+)
+
+name, authentication_status, username = authenticator.login("Login", "main")
+if authentication_status:
+    authenticator.logout("Logout", "sidebar")
+    st.sidebar.success(f"Bienvenido {name}")
+elif authentication_status is False:
+    st.error("Usuario o contraseña incorrectos")
+    st.stop()
+else:
+    st.warning("Por favor, ingresa tus credenciales")
+    st.stop()
 
 
 # --- CARGA DE DATOS ---
@@ -1282,7 +1316,7 @@ with tab_turno:
     st.markdown("---")
 
     # --- NUEVO: Ranking de efectividad por turno ---
-    st.subheader("🏆 Turnos con mejor y peor efectividad")
+    st.subheader("🏆 Efectividad por Turno")
 
     # 1) Efectividad y dotación promedio por turno
     df_perf = (
