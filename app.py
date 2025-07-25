@@ -525,7 +525,7 @@ with tab_pred:
     # rango deslizante similar al utilizado en la gráfica de ventas
     fig.update_xaxes(
         range=[dot_range.min(), dot_range.max()],
-        rangeslider_visible=False,
+        rangeslider_visible=True,
     )
     st.plotly_chart(fig, use_container_width=True)
 
