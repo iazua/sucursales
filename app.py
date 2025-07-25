@@ -173,10 +173,16 @@ usernames = ["admin"]
 passwords = ["admin123"]
 hashed_passwords = stauth.Hasher(passwords).generate()
 
+# Adapt credentials to the current streamlit-authenticator API
+credentials = {
+    "usernames": {
+        user: {"name": name, "password": pwd}
+        for user, name, pwd in zip(usernames, names, hashed_passwords)
+    }
+}
+
 authenticator = stauth.Authenticate(
-    names,
-    usernames,
-    hashed_passwords,
+    credentials,
     "auth_cookie",
     "some_signature_key",
     cookie_expiry_days=1,
