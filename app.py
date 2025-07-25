@@ -25,6 +25,12 @@ WHITE = "#FFFFFF"
 BLACK = "#000000"
 ACCENT_RGBA = "[241, 172, 75, 160]"  # Sandy Brown con opacidad
 PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
+# Mapeo de colores para series históricas y de predicción
+COLOR_DISCRETE_MAP = {
+    "Histórico": PRIMARY_BG,
+    "Predicción": ACCENT_COLOR,
+    "Requerida": ACCENT_COLOR,
+}
 # ---------------------------------------------------------------------------
 
 # --- CONSTANTES ---
@@ -560,7 +566,13 @@ with tab_pred:
         .reset_index()
         .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
     )
-    fig = px.line(df_plot_ao_long, x='FECHA', y='Valor', color='Tipo')
+    fig = px.line(
+        df_plot_ao_long,
+        x='FECHA',
+        y='Valor',
+        color='Tipo',
+        color_discrete_map=COLOR_DISCRETE_MAP,
+    )
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
@@ -605,7 +617,13 @@ with tab_pred:
         .reset_index()
         .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
     )
-    fig = px.line(df_plot_v_long, x='FECHA', y='Valor', color='Tipo')
+    fig = px.line(
+        df_plot_v_long,
+        x='FECHA',
+        y='Valor',
+        color='Tipo',
+        color_discrete_map=COLOR_DISCRETE_MAP,
+    )
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
@@ -648,7 +666,13 @@ with tab_pred:
         .reset_index()
         .melt(id_vars='FECHA', var_name='Tipo', value_name='Valor')
     )
-    fig = px.line(df_plot_vis_long, x='FECHA', y='Valor', color='Tipo')
+    fig = px.line(
+        df_plot_vis_long,
+        x='FECHA',
+        y='Valor',
+        color='Tipo',
+        color_discrete_map=COLOR_DISCRETE_MAP,
+    )
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
