@@ -12,8 +12,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 # ---------------------------------------------------------------------------
-# Paleta oficial Banco Ripley Chile (2023)
-# https://brand.ripley.cl
+# Paleta oficial Banco
+
 PRIMARY_COLOR = "#4F2D7F"  # Minsk
 DARK_BG_COLOR = "#361860"  # Scarlet Gum
 # Color de fondo para secciones claras y tablas
