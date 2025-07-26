@@ -147,6 +147,11 @@ st.markdown(
       background-color: var(--primary) !important;
       color: var(--white);
     }}
+    /* Imágenes responsivas */
+    img {
+      max-width: 100%;
+      height: auto;
+    }
     /* Dropdown integrado */
     .stSelectbox div[data-baseweb="select"] > div {{
       background-color: var(--dark-bg);
@@ -170,7 +175,7 @@ col1, col2, col3 = st.columns([1, 1, 1])
 with col2:
     st.image(
         "https://upload.wikimedia.org/wikipedia/commons/2/27/Logo_Ripley_banco_2.png",
-        width=750
+        use_column_width=True
     )
 
 
@@ -794,7 +799,6 @@ with tab_hist:
                 color_discrete_sequence=COLOR_SEQUENCE,
                 category_orders={'TipoDia': ['Semana', 'Fin de Semana']}
             ).update_layout(
-                height=600,
                 plot_bgcolor=DARK_BG_COLOR,
                 paper_bgcolor=DARK_BG_COLOR,
                 font_color=WHITE,
@@ -814,7 +818,6 @@ with tab_hist:
                 color_discrete_sequence=COLOR_SEQUENCE,
                 category_orders={'TipoDia': ['Semana', 'Fin de Semana']}
             ).update_layout(
-                height=600,
                 plot_bgcolor=DARK_BG_COLOR,
                 paper_bgcolor=DARK_BG_COLOR,
                 font_color=WHITE,
@@ -1029,7 +1032,7 @@ with tab_turno:
 
     # 5) Diseño general
     fig.update_layout(
-        height=900,
+        height=600,
         showlegend=False,
         title_text=f'Efectividad diaria por turno ({rango_seleccionado})',
         plot_bgcolor=DARK_BG_COLOR,
