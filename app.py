@@ -152,10 +152,10 @@ st.markdown(
       color: var(--white);
     }}
     /* Imágenes responsivas */
-    img {
+    img {{
       max-width: 100%;
       height: auto;
-    }
+    }}
     /* Dropdown integrado */
     .stSelectbox div[data-baseweb="select"] > div {{
       background-color: var(--dark-bg);
