@@ -67,6 +67,10 @@ st.markdown(
       --white: {WHITE};
       --black: {BLACK};
     }}
+    /* Aseguramos mismo color de los encabezados en todas las plataformas */
+    h1, h2, h3, h4, h5, h6 {{
+      color: var(--white);
+    }}
     /* Fondo general */
     .stApp, .css-1d391kg {{
       background-color: var(--dark-bg);
