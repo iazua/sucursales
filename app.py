@@ -1008,7 +1008,7 @@ with tab_turno:
     pivot_conv = (
         conv_dt
         .pivot(index='DiaSemana', columns='Turno', values='Conversion')
-        .reindex(index=dias, columns=list(turnos.values()))
+        .loc[dias, list(turnos.values())]
     )
 
     # 4) Convertir a % para mostrar
