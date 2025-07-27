@@ -123,8 +123,20 @@ st.markdown(
       filter: brightness(1.1);
     }}
     /* Sliders */
-    div[data-baseweb="slider"] span {{
+    div[data-baseweb="slider"] .rc-slider-track {{
       background-color: var(--accent) !important;
+      height: 6px;
+    }}
+    div[data-baseweb="slider"] .rc-slider-rail {{
+      background-color: var(--white) !important;
+      height: 6px;
+    }}
+    div[data-baseweb="slider"] .rc-slider-handle {{
+      background-color: var(--accent) !important;
+      border: 2px solid var(--white);
+      height: 16px;
+      width: 16px;
+      margin-top: -5px;
     }}
     /* Tablas incrustadas en el fondo */
     .stDataFrame, .stTable {{
@@ -361,10 +373,15 @@ with tab_pred:
     avg_eff_dot1 = df_dot1["P_EFECTIVIDAD"].mean() if not df_dot1.empty else np.nan
 
     # --- SLIDER DE EFECTIVIDAD OBJETIVO ---
-    efectividad_obj = st.slider(
-        "Efectividad objetivo (P_EFECTIVIDAD):",
-        min_value=0.0, max_value=1.0, value=0.62, step=0.01, format="%.2f"
+    efectividad_pct = st.slider(
+        "Efectividad objetivo:",
+        min_value=0,
+        max_value=100,
+        value=62,
+        step=1,
+        format="%d%%",
     )
+    efectividad_obj = efectividad_pct / 100
 
 
     # --- app.py ---
