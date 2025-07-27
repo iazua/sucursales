@@ -483,8 +483,7 @@ with tab_pred:
 
     # 4. Calcular x0 recalibrado usando promedio de Ventas requeridas
     avg_ventas = np.nanmean(df_pred["T_AO_VENTA_req"]) if 'T_AO_VENTA_req' in df_pred else np.nan
-    x0_theo = x0_base if np.isnan(avg_ventas) or avg_ventas <= 0 else x0_base - x0_fac * avg_ventas
-    punto_inflexion = x0_theo
+    x0_theo = x0_base if np.isnan(avg_ventas) or avg_ventas <= 0 else max(1.0, x0_base - x0_fac * avg_ventas)
 
 
     # 5. Definir funciones con k dinámico
@@ -560,14 +559,6 @@ with tab_pred:
         line_color=ACCENT_COLOR,
         annotation_text="Dot. Óptima",
         annotation_position="top",
-    )
-    # Punto de inflexión teórico
-    fig.add_vline(
-        x=punto_inflexion,
-        line_dash="dot",
-        line_color=PRIMARY_BG,
-        annotation_text="Inflección",
-        annotation_position="bottom",
     )
 
     fig.update_layout(
