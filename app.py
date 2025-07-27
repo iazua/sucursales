@@ -505,6 +505,13 @@ with tab_pred:
         "Efectividad": np.concatenate([ef_sig, ef_gom])
     })
 
+    # --- Variación de efectividad al sumar una persona ---
+    delta_sig = np.diff(ef_sig)
+    df_delta = pd.DataFrame({
+        "Dotación": dot_range[1:],
+        "Δ Sigmoide": delta_sig,
+    })
+
     # 6.b Calcular dotación óptima usando las predicciones actuales
     dot_opt, _ = estimar_dotacion_optima(
         df_pred["T_AO_pred"],
@@ -514,22 +521,45 @@ with tab_pred:
     )
     dot_opt = int(np.clip(np.round(dot_opt), dot_range.min(), dot_range.max()))
 
-    # 7. Graficar con fondo púrpura si aplica
-    fig = px.line(
-        df_curve,
-        x="Dotación",
-        y="Efectividad",
-        color="Modelo",
-        labels={"Dotación": "Dotación", "Efectividad": "Efectividad"},
-        color_discrete_sequence=[ACCENT_COLOR, PRIMARY_BG],
-        title=" "
+    # 7. Gráfico combinado de curva e incremento de efectividad
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Curvas teóricas
+    for modelo, color in zip(["Sigmoide", "Gompertz"], [ACCENT_COLOR, PRIMARY_BG]):
+        df_m = df_curve[df_curve["Modelo"] == modelo]
+        fig.add_trace(
+            go.Scatter(
+                x=df_m["Dotación"],
+                y=df_m["Efectividad"],
+                mode="lines+markers",
+                name=modelo,
+                line=dict(color=color),
+            ),
+            secondary_y=False,
+        )
+
+    # Incremento de efectividad al sumar 1 persona (sigmoide)
+    fig.add_trace(
+        go.Bar(
+            x=df_delta["Dotación"],
+            y=df_delta["Δ Sigmoide"],
+            name="Δ Efectividad (Sigmoide)",
+            marker_color=ACCENT_COLOR,
+            opacity=0.5,
+        ),
+        secondary_y=True,
     )
+
     fig.update_layout(
         paper_bgcolor=DARK_BG_COLOR,
         plot_bgcolor=DARK_BG_COLOR,
         font_color=WHITE,
-        title_font_color=WHITE
+        title=" ",
+        legend_title_text="Modelo",
+        barmode="group",
     )
+    fig.update_yaxes(title_text="Efectividad", secondary_y=False)
+    fig.update_yaxes(title_text="Δ Efectividad", secondary_y=True)
 
     st.plotly_chart(fig, use_container_width=True)
 
