@@ -122,21 +122,30 @@ st.markdown(
     .stButton.cta>button:hover {{
       filter: brightness(1.1);
     }}
-    /* Sliders */
+    /* Slider - estilo moderno */
     div[data-baseweb="slider"] .rc-slider-track {{
-      background-color: var(--accent) !important;
-      height: 6px;
+      background: linear-gradient(90deg, var(--accent), var(--primary)) !important;
+      height: 8px;
     }}
     div[data-baseweb="slider"] .rc-slider-rail {{
-      background-color: var(--white) !important;
-      height: 6px;
+      background-color: rgba(255, 255, 255, 0.4) !important;
+      height: 8px;
     }}
     div[data-baseweb="slider"] .rc-slider-handle {{
       background-color: var(--accent) !important;
-      border: 2px solid var(--white);
-      height: 16px;
-      width: 16px;
-      margin-top: -5px;
+      border: none;
+      height: 20px;
+      width: 20px;
+      margin-top: -6px;
+      box-shadow: 0 0 0 2px var(--white);
+    }}
+    div[data-baseweb="slider"] .rc-slider-handle:active {{
+      box-shadow: 0 0 0 4px rgba(241, 172, 75, 0.5);
+    }}
+    .slider-label {{
+      color: var(--white);
+      font-weight: 600;
+      margin-bottom: 0.25rem;
     }}
     /* Tablas incrustadas en el fondo */
     .stDataFrame, .stTable {{
@@ -373,13 +382,18 @@ with tab_pred:
     avg_eff_dot1 = df_dot1["P_EFECTIVIDAD"].mean() if not df_dot1.empty else np.nan
 
     # --- SLIDER DE EFECTIVIDAD OBJETIVO ---
+    st.markdown(
+        "<div class='slider-label'><b>Efectividad objetivo:</b></div>",
+        unsafe_allow_html=True,
+    )
     efectividad_pct = st.slider(
-        "Efectividad objetivo:",
+        label="",
         min_value=0,
         max_value=100,
         value=62,
         step=1,
         format="%d%%",
+        label_visibility="collapsed",
     )
     efectividad_obj = efectividad_pct / 100
 
