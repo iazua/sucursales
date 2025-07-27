@@ -540,14 +540,25 @@ with tab_pred:
 
     # Incremento de efectividad al sumar 1 persona (sigmoide)
     fig.add_trace(
-        go.Bar(
+        go.Scatter(
             x=df_delta["Dotación"],
             y=df_delta["Δ Sigmoide"],
+            mode="lines+markers+text",
             name="Δ Efectividad (Sigmoide)",
-            marker_color=ACCENT_COLOR,
-            opacity=0.5,
+            text=[f"{d:.1%}" for d in df_delta["Δ Sigmoide"]],
+            textposition="top center",
+            line=dict(color=ACCENT_COLOR, dash="dot"),
         ),
         secondary_y=True,
+    )
+
+    # Línea vertical en dotación óptima
+    fig.add_vline(
+        x=dot_opt,
+        line_dash="dash",
+        line_color=ACCENT_COLOR,
+        annotation_text="Dot. Óptima",
+        annotation_position="top",
     )
 
     fig.update_layout(
