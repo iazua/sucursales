@@ -530,12 +530,7 @@ with tab_pred:
         font_color=WHITE,
         title_font_color=WHITE
     )
-    # Ajustar el rango inicial del eje X para que comience en 1 y mostrar un
-    # rango deslizante similar al utilizado en la gráfica de ventas
-    fig.update_xaxes(
-        range=[dot_range.min(), dot_range.max()],
-        rangeslider_visible=True,
-    )
+
     st.plotly_chart(fig, use_container_width=True)
 
     df_display = df_pred.copy()
