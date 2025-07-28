@@ -385,14 +385,7 @@ with tab_mapa:
     worst_val = eff_branch.loc[worst_id, 'ef']
     best_val = eff_branch.loc[best_id, 'ef']
     cols_eff = st.columns(2)
-    delta_worst = worst_val - best_val
-    cols_eff[0].metric(
-        "Peor efectividad",
-        f"Sucursal {worst_id}",
-        f"{worst_val:.1%}",
-        delta=f"{delta_worst:.1%}",
-        delta_color="normal",
-    )
+    cols_eff[0].metric("Peor efectividad", f"Sucursal {worst_id}", f"{worst_val:.1%}")
     cols_eff[1].metric("Mejor efectividad", f"Sucursal {best_id}", f"{best_val:.1%}")
 
     st.markdown("---")
