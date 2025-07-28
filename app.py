@@ -368,10 +368,25 @@ with tab_mapa:
     global_eff = total_sales / total_ao if total_ao else 0
 
     cols_global = st.columns(4)
-    cols_global[0].metric("Total Visitas", f"{total_vis:,}")
-    cols_global[1].metric("Total Acepta Oferta", f"{total_ao:,}")
-    cols_global[2].metric("Ventas", f"{total_sales:,}")
+    cols_global[0].metric("Total Visitas", f"{total_vis:,}".replace(",", "."))
+    cols_global[1].metric("Total Acepta Oferta", f"{total_ao:,}".replace(",", "."))
+    cols_global[2].metric("Ventas", f"{total_sales:,}".replace(",", "."))
     cols_global[3].metric("Efectividad Global", f"{global_eff:.1%}")
+
+    # Tarjetas con la mejor y peor efectividad por sucursal
+    eff_branch = (
+        df_map.groupby('COD_SUC')
+        .agg({'T_AO': 'sum', 'T_AO_VENTA': 'sum'})
+    )
+    eff_branch['ef'] = eff_branch['T_AO_VENTA'] / eff_branch['T_AO']
+    eff_branch = eff_branch.replace([np.inf, -np.inf], np.nan).dropna(subset=['ef'])
+    worst_id = eff_branch['ef'].idxmin()
+    best_id = eff_branch['ef'].idxmax()
+    worst_val = eff_branch.loc[worst_id, 'ef']
+    best_val = eff_branch.loc[best_id, 'ef']
+    cols_eff = st.columns(2)
+    cols_eff[0].metric("Peor efectividad", f"Sucursal {worst_id}", f"{worst_val:.1%}")
+    cols_eff[1].metric("Mejor efectividad", f"Sucursal {best_id}", f"{best_val:.1%}")
 
     st.markdown("---")
 
@@ -400,14 +415,15 @@ with tab_mapa:
     )
     st.plotly_chart(fig_zona, use_container_width=True)
 
-    st.markdown("### Top Sucursales por Ventas")
+    st.markdown("### Overview")
     ranking = (
         df_map
         .groupby(['COD_SUC', 'ZONA'], as_index=False)
         .agg({'T_VISITAS': 'sum', 'T_AO': 'sum', 'T_AO_VENTA': 'sum'})
     )
     ranking['Efectividad'] = ranking['T_AO_VENTA'] / ranking['T_AO']
-    ranking = ranking.sort_values('T_AO_VENTA', ascending=False).head(10)
+    ranking['COD_SUC'] = ranking['COD_SUC'].astype(str)
+    ranking = ranking.sort_values('COD_SUC')
     ranking_display = ranking.rename(columns={
         'COD_SUC': 'Sucursal',
         'ZONA': 'Zona',
@@ -417,7 +433,7 @@ with tab_mapa:
         'Efectividad': 'Efectividad'
     })
     for c in ['Visitas', 'Acepta Oferta', 'Ventas']:
-        ranking_display[c] = ranking_display[c].astype(int)
+        ranking_display[c] = ranking_display[c].astype(int).apply(lambda x: f"{x:,}".replace(',', '.'))
     ranking_display['Efectividad'] = ranking_display['Efectividad'].apply(lambda x: f"{x:.1%}")
     st.dataframe(ranking_display, use_container_width=True, hide_index=True)
 
@@ -554,6 +570,9 @@ with tab_pred:
     df_hourly["Ventas requeridas"] = df_hourly["Ventas requeridas"].round(0).astype(int)
     df_hourly["% Efectividad requerida"] = df_hourly["% Efectividad requerida"].round(2)
 
+    for col in ["Visitas estimadas", "Ofertas aceptadas estimadas", "Ventas requeridas"]:
+        df_hourly[col] = df_hourly[col].apply(lambda x: f"{x:,}".replace(',', '.'))
+
     # 5) Seleccionamos el orden final de columnas
     df_hourly = df_hourly[[
         "Fecha registro", "Día", "Hora",
@@ -583,6 +602,9 @@ with tab_pred:
     # Orden cronológico
     df_daily["_dt"] = pd.to_datetime(df_daily["Fecha registro"], format="%d-%m-%Y")
     df_daily = df_daily.sort_values("_dt").drop(columns="_dt")
+
+    for col in ["Visitas estimadas", "Ofertas aceptadas estimadas", "Ventas requeridas"]:
+        df_daily[col] = df_daily[col].astype(int).apply(lambda x: f"{x:,}".replace(',', '.'))
 
     st.dataframe(df_daily, use_container_width=True, hide_index=True)
 
@@ -1384,6 +1406,8 @@ with tab_turno:
         })
 
     df_recs = pd.DataFrame(recs)
+    if 'Turno' in df_recs.columns and pd.api.types.is_numeric_dtype(df_recs['Turno']):
+        df_recs['Turno'] = df_recs['Turno'].astype(int).apply(lambda x: f"{x:,}".replace(',', '.'))
 
     # 6) Mostrar recomendaciones como tabla
     st.table(df_recs)
