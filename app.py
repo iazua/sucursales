@@ -28,8 +28,9 @@ PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
 # Mapeo de colores para series históricas y de predicción
 COLOR_DISCRETE_MAP = {
     "Histórico": ACCENT_COLOR,
-    "Predicción": PRIMARY_BG,
-    "Requerida": PRIMARY_BG,
+    "Escenario 1": PRIMARY_BG,
+    "Escenario 2": "#00CC96",
+    "Escenario 3": "#EF553B",
 }
 # Colores para series donde se muestran dos categorías
 # (e.g. Semana vs Fin de Semana) en gráficas de torta o barras
@@ -42,6 +43,10 @@ PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
 HOURS_RANGE = list(range(9, 22))
 # Fecha límite para las proyecciones automáticas
 PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
+
+# Definición de escenarios de ruido para proyecciones
+SCENARIO_SCALES = [0.0, 0.05, 0.1]
+SCENARIO_NAMES = [f"Escenario {i+1}" for i in range(len(SCENARIO_SCALES))]
 
 # Mapeo de días de la semana en inglés a español
 DAY_NAME_MAP_ES = {
@@ -404,7 +409,8 @@ with tab_pred:
     def forecast_fast(df_all: pd.DataFrame,
                       cod_suc: int,
                       efect_obj: float,
-                      days: int) -> pd.DataFrame:
+                      days: int,
+                      noise_scale: float = 0.0) -> pd.DataFrame:
         """Versión rápida usando `generate_predictions` vectorizado."""
         last_date = df_all[df_all["COD_SUC"] == cod_suc]["FECHA"].max()
         start_dt = last_date + timedelta(days=1)
@@ -415,16 +421,28 @@ with tab_pred:
             efectividad_obj=efect_obj,
             start_date=start_dt,
             end_date=end_dt,
+            noise_scale=noise_scale,
         )
 
 
     # ---------- LLAMADA ----------
-    df_pred = forecast_fast(
-        df,
-        cod_suc,
-        efectividad_obj,
-        days_proj,
+    # Generar predicciones para cada escenario definido
+    pred_dict = {
+        name: forecast_fast(
+            df,
+            cod_suc,
+            efectividad_obj,
+            days_proj,
+            noise_scale=scale,
+        )
+        for name, scale in zip(SCENARIO_NAMES, SCENARIO_SCALES)
+    }
+
+    scenario_selected = st.selectbox(
+        "Escenario para tablas", SCENARIO_NAMES, index=0
     )
+
+    df_pred = pred_dict[scenario_selected]
 
     # ——— TABLA POR HORA ———
     st.subheader("Por hora")
@@ -605,17 +623,20 @@ with tab_pred:
 
     st.plotly_chart(fig, use_container_width=True)
 
-    df_display = df_pred.copy()
+    df_display_dict = {}
+    for name, df_p in pred_dict.items():
+        d = df_p.copy()
+        d["DÍA"] = d["FECHA"].dt.strftime("%d-%m-%Y")
+        d = d.rename(columns={
+            "T_AO_pred": "Ofertas aceptadas estimadas",
+            "HORA": "Hora",
+            "T_VISITAS_pred": "Visitas estimadas",
+            "T_AO_VENTA_req": "Ventas requeridas",
+            "P_EFECTIVIDAD_req": "% Efectividad requerida",
+        })
+        df_display_dict[name] = d
 
-    # Formatear la fecha y renombrar columnas como en la tabla horaria
-    df_display["DÍA"] = df_display["FECHA"].dt.strftime("%d-%m-%Y")
-    df_display = df_display.rename(columns={
-        "T_AO_pred": "Ofertas aceptadas estimadas",
-        "HORA": "Hora",
-        "T_VISITAS_pred": "Visitas estimadas",
-        "T_AO_VENTA_req": "Ventas requeridas",
-        "P_EFECTIVIDAD_req": "% Efectividad requerida",
-    })
+    df_display = df_display_dict[scenario_selected]
 
     # --- GRÁFICO 1: Ofertas Aceptadas diario ---
     st.subheader("📈 Histórico y Predicción de Ofertas Aceptadas")
@@ -631,19 +652,22 @@ with tab_pred:
         .assign(Tipo='Histórico')
     )
 
-    # Agrupar predicción por fecha
-    pred_ao = (
-        df_display
-        .groupby('DÍA', observed=True)['Ofertas aceptadas estimadas']
-        .sum()
-        .reset_index()
-        .rename(columns={'DÍA': 'FECHA', 'Ofertas aceptadas estimadas': 'Valor'})
-    )
-    pred_ao['FECHA'] = pd.to_datetime(pred_ao['FECHA'], format='%d-%m-%Y')
-    pred_ao = pred_ao.sort_values('FECHA').head(days_proj).assign(Tipo='Predicción')
+    # Agrupar predicción por fecha para cada escenario
+    pred_ao_list = []
+    for name, df_disp in df_display_dict.items():
+        tmp = (
+            df_disp
+            .groupby('DÍA', observed=True)['Ofertas aceptadas estimadas']
+            .sum()
+            .reset_index()
+            .rename(columns={'DÍA': 'FECHA', 'Ofertas aceptadas estimadas': 'Valor'})
+        )
+        tmp['FECHA'] = pd.to_datetime(tmp['FECHA'], format='%d-%m-%Y')
+        tmp = tmp.sort_values('FECHA').head(days_proj).assign(Tipo=name)
+        pred_ao_list.append(tmp)
 
     # Combinar y pivotar
-    df_plot_ao = pd.concat([hist_ao, pred_ao], ignore_index=True)
+    df_plot_ao = pd.concat([hist_ao] + pred_ao_list, ignore_index=True)
     df_pivot_ao = df_plot_ao.pivot_table(
         index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
     )
@@ -683,19 +707,22 @@ with tab_pred:
         .assign(Tipo='Histórico')
     )
 
-    # Agrupar predicción de ventas requeridas
-    pred_v = (
-        df_display
-        .groupby('DÍA', observed=True)['Ventas requeridas']
-        .sum()
-        .reset_index()
-        .rename(columns={'DÍA': 'FECHA', 'Ventas requeridas': 'Valor'})
-    )
-    pred_v['FECHA'] = pd.to_datetime(pred_v['FECHA'], format='%d-%m-%Y')
-    pred_v = pred_v.sort_values('FECHA').head(days_proj).assign(Tipo='Requerida')
+    # Agrupar predicción de ventas requeridas por escenario
+    pred_v_list = []
+    for name, df_disp in df_display_dict.items():
+        tmp = (
+            df_disp
+            .groupby('DÍA', observed=True)['Ventas requeridas']
+            .sum()
+            .reset_index()
+            .rename(columns={'DÍA': 'FECHA', 'Ventas requeridas': 'Valor'})
+        )
+        tmp['FECHA'] = pd.to_datetime(tmp['FECHA'], format='%d-%m-%Y')
+        tmp = tmp.sort_values('FECHA').head(days_proj).assign(Tipo=name)
+        pred_v_list.append(tmp)
 
     # Combinar y pivotar
-    df_plot_v = pd.concat([hist_v, pred_v], ignore_index=True)
+    df_plot_v = pd.concat([hist_v] + pred_v_list, ignore_index=True)
     df_pivot_v = df_plot_v.pivot_table(
         index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
     )
@@ -733,19 +760,22 @@ with tab_pred:
         .assign(Tipo='Histórico')
     )
 
-    # Agrupar predicción de visitas estimadas
-    pred_vis = (
-        df_display
-        .groupby('DÍA', observed=True)['Visitas estimadas']
-        .sum()
-        .reset_index()
-        .rename(columns={'DÍA': 'FECHA', 'Visitas estimadas': 'Valor'})
-    )
-    pred_vis['FECHA'] = pd.to_datetime(pred_vis['FECHA'], format='%d-%m-%Y')
-    pred_vis = pred_vis.sort_values('FECHA').head(days_proj).assign(Tipo='Predicción')
+    # Agrupar predicción de visitas estimadas por escenario
+    pred_vis_list = []
+    for name, df_disp in df_display_dict.items():
+        tmp = (
+            df_disp
+            .groupby('DÍA', observed=True)['Visitas estimadas']
+            .sum()
+            .reset_index()
+            .rename(columns={'DÍA': 'FECHA', 'Visitas estimadas': 'Valor'})
+        )
+        tmp['FECHA'] = pd.to_datetime(tmp['FECHA'], format='%d-%m-%Y')
+        tmp = tmp.sort_values('FECHA').head(days_proj).assign(Tipo=name)
+        pred_vis_list.append(tmp)
 
     # Combinar y pivotar
-    df_plot_vis = pd.concat([hist_vis, pred_vis], ignore_index=True)
+    df_plot_vis = pd.concat([hist_vis] + pred_vis_list, ignore_index=True)
     df_pivot_vis = df_plot_vis.pivot_table(
         index='FECHA', columns='Tipo', values='Valor', aggfunc='sum'
     )
