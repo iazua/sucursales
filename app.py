@@ -28,9 +28,8 @@ PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
 # Mapeo de colores para series históricas y de predicción
 COLOR_DISCRETE_MAP = {
     "Histórico": ACCENT_COLOR,
-    "Escenario 1": PRIMARY_BG,
-    "Escenario 2": "#00CC96",
-    "Escenario 3": "#EF553B",
+    "Escenario base": PRIMARY_BG,
+    "Escenario alterno": "#00CC96",
 }
 # Colores para series donde se muestran dos categorías
 # (e.g. Semana vs Fin de Semana) en gráficas de torta o barras
@@ -44,11 +43,8 @@ HOURS_RANGE = list(range(9, 22))
 # Fecha límite para las proyecciones automáticas
 PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
 
-# Definición de escenarios de ruido para proyecciones
-# Se incrementan las escalas para que cada escenario
-# genere variaciones más notorias en las predicciones
-SCENARIO_SCALES = [0.0, 0.5, 1.0]
-SCENARIO_NAMES = [f"Escenario {i+1}" for i in range(len(SCENARIO_SCALES))]
+# Nombre de escenarios disponibles: base (sin ruido) y alterno con ruido
+SCENARIO_NAMES = ["Escenario base", "Escenario alterno"]
 
 # Mapeo de días de la semana en inglés a español
 DAY_NAME_MAP_ES = {
@@ -404,6 +400,20 @@ with tab_pred:
     )
     efectividad_obj = efectividad_pct / 100
 
+    st.markdown(
+        "<div class='slider-label'><b>Ruido escenario alterno:</b></div>",
+        unsafe_allow_html=True,
+    )
+    noise_slider = st.slider(
+        label="",
+        min_value=0.0,
+        max_value=2.0,
+        value=0.5,
+        step=0.1,
+        format="%.1f",
+        label_visibility="collapsed",
+    )
+
 
     # --- app.py ---
 
@@ -430,14 +440,20 @@ with tab_pred:
     # ---------- LLAMADA ----------
     # Generar predicciones para cada escenario definido
     pred_dict = {
-        name: forecast_fast(
+        "Escenario base": forecast_fast(
             df,
             cod_suc,
             efectividad_obj,
             days_proj,
-            noise_scale=scale,
-        )
-        for name, scale in zip(SCENARIO_NAMES, SCENARIO_SCALES)
+            noise_scale=0.0,
+        ),
+        "Escenario alterno": forecast_fast(
+            df,
+            cod_suc,
+            efectividad_obj,
+            days_proj,
+            noise_scale=noise_slider,
+        ),
     }
 
     scenario_selected = st.selectbox(
