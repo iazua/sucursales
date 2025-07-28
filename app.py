@@ -570,8 +570,10 @@ with tab_pred:
     df_hourly["Ventas requeridas"] = df_hourly["Ventas requeridas"].round(0).astype(int)
     df_hourly["% Efectividad requerida"] = df_hourly["% Efectividad requerida"].round(2)
 
+    # Preparamos una copia solo para mostrar, aplicando formato de miles
+    df_hourly_display = df_hourly.copy()
     for col in ["Visitas estimadas", "Ofertas aceptadas estimadas", "Ventas requeridas"]:
-        df_hourly[col] = df_hourly[col].apply(lambda x: f"{x:,}".replace(',', '.'))
+        df_hourly_display[col] = df_hourly_display[col].apply(lambda x: f"{x:,}".replace(',', '.'))
 
     # 5) Seleccionamos el orden final de columnas
     df_hourly = df_hourly[[
@@ -579,8 +581,9 @@ with tab_pred:
         "Visitas estimadas", "Ofertas aceptadas estimadas",
         "Ventas requeridas", "% Efectividad requerida"
     ]]
+    df_hourly_display = df_hourly_display[df_hourly.columns]
 
-    st.dataframe(df_hourly, use_container_width=True, hide_index=True)
+    st.dataframe(df_hourly_display, use_container_width=True, hide_index=True)
 
     # ——— TABLA POR DÍA ———
     st.subheader("Por día")
@@ -603,10 +606,12 @@ with tab_pred:
     df_daily["_dt"] = pd.to_datetime(df_daily["Fecha registro"], format="%d-%m-%Y")
     df_daily = df_daily.sort_values("_dt").drop(columns="_dt")
 
+    # Preparamos una copia formateada solo para mostrar
+    df_daily_display = df_daily.copy()
     for col in ["Visitas estimadas", "Ofertas aceptadas estimadas", "Ventas requeridas"]:
-        df_daily[col] = df_daily[col].astype(int).apply(lambda x: f"{x:,}".replace(',', '.'))
+        df_daily_display[col] = df_daily_display[col].apply(lambda x: f"{int(x):,}".replace(',', '.'))
 
-    st.dataframe(df_daily, use_container_width=True, hide_index=True)
+    st.dataframe(df_daily_display, use_container_width=True, hide_index=True)
 
     # --- CURVA DE EFECTIVIDAD vs. DOTACIÓN (Teórica) ---
     st.subheader("Curva de Efectividad vs. Dotación")
