@@ -361,6 +361,66 @@ with tab_mapa:
         }
     ), use_container_width=True)
 
+    # --- Resumen Global de Sucursales ---
+    total_vis = int(df['T_VISITAS'].sum())
+    total_ao = int(df['T_AO'].sum())
+    total_sales = int(df['T_AO_VENTA'].sum())
+    global_eff = total_sales / total_ao if total_ao else 0
+
+    cols_global = st.columns(4)
+    cols_global[0].metric("Total Visitas", f"{total_vis:,}")
+    cols_global[1].metric("Total Acepta Oferta", f"{total_ao:,}")
+    cols_global[2].metric("Ventas", f"{total_sales:,}")
+    cols_global[3].metric("Efectividad Global", f"{global_eff:.1%}")
+
+    st.markdown("---")
+
+    # --- Agrupación por zona ---
+    zona_totales = (
+        df_map
+        .groupby('ZONA', as_index=False)
+        .agg({'T_VISITAS': 'sum', 'T_AO_VENTA': 'sum'})
+        .sort_values('T_VISITAS', ascending=False)
+    )
+    fig_zona = px.bar(
+        zona_totales,
+        x='ZONA',
+        y=['T_VISITAS', 'T_AO_VENTA'],
+        barmode='group',
+        color_discrete_sequence=COLOR_SEQUENCE,
+        labels={'value': 'Total', 'variable': 'Métrica', 'ZONA': 'Zona'}
+    )
+    fig_zona.update_layout(
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE,
+        legend_title_font_color=WHITE,
+        title='Totales por Zona'
+    )
+    st.plotly_chart(fig_zona, use_container_width=True)
+
+    st.markdown("### Top Sucursales por Ventas")
+    ranking = (
+        df_map
+        .groupby(['COD_SUC', 'ZONA'], as_index=False)
+        .agg({'T_VISITAS': 'sum', 'T_AO': 'sum', 'T_AO_VENTA': 'sum'})
+    )
+    ranking['Efectividad'] = ranking['T_AO_VENTA'] / ranking['T_AO']
+    ranking = ranking.sort_values('T_AO_VENTA', ascending=False).head(10)
+    ranking_display = ranking.rename(columns={
+        'COD_SUC': 'Sucursal',
+        'ZONA': 'Zona',
+        'T_VISITAS': 'Visitas',
+        'T_AO': 'Acepta Oferta',
+        'T_AO_VENTA': 'Ventas',
+        'Efectividad': 'Efectividad'
+    })
+    for c in ['Visitas', 'Acepta Oferta', 'Ventas']:
+        ranking_display[c] = ranking_display[c].astype(int)
+    ranking_display['Efectividad'] = ranking_display['Efectividad'].apply(lambda x: f"{x:.1%}")
+    st.dataframe(ranking_display, use_container_width=True, hide_index=True)
+
 with tab_pred:
     st.title("🔍 Predicción de Dotación y Efectividad por Hora")
 
