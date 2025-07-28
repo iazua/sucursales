@@ -29,7 +29,7 @@ PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
 COLOR_DISCRETE_MAP = {
     "Histórico": ACCENT_COLOR,
     "Escenario base": PRIMARY_BG,
-    "Escenario alterno": "#00CC96",
+    "Escenario alterno": "#FF4B4B",  # rojo para diferenciar el escenario alterno
 }
 # Colores para series donde se muestran dos categorías
 # (e.g. Semana vs Fin de Semana) en gráficas de torta o barras
@@ -408,7 +408,7 @@ with tab_pred:
         label="",
         min_value=0.0,
         max_value=2.0,
-        value=0.5,
+        value=2.0,
         step=0.1,
         format="%.1f",
         label_visibility="collapsed",
