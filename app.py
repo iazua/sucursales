@@ -45,7 +45,9 @@ HOURS_RANGE = list(range(9, 22))
 PREDICTION_END_DATE = pd.Timestamp("2025-12-31")
 
 # Definición de escenarios de ruido para proyecciones
-SCENARIO_SCALES = [0.0, 0.2, 0.4]
+# Se incrementan las escalas para que cada escenario
+# genere variaciones más notorias en las predicciones
+SCENARIO_SCALES = [0.0, 0.5, 1.0]
 SCENARIO_NAMES = [f"Escenario {i+1}" for i in range(len(SCENARIO_SCALES))]
 
 # Mapeo de días de la semana en inglés a español
