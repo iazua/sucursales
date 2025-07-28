@@ -437,6 +437,60 @@ with tab_mapa:
     ranking_display['Efectividad'] = ranking_display['Efectividad'].apply(lambda x: f"{x:.1%}")
     st.dataframe(ranking_display, use_container_width=True, hide_index=True)
 
+    # --- Evolución mensual de efectividad por sucursal ---
+    st.markdown("### Evolución mensual de efectividad")
+
+    # Dropdown de sucursal y slider de rango de fechas
+    sucursales_hist = sorted(df["COD_SUC"].unique())
+    sucursal_hist = st.selectbox(
+        "Sucursal",
+        sucursales_hist,
+        key="eff_branch_sel",
+    )
+
+    min_fecha = df["FECHA"].min().date()
+    max_fecha = df["FECHA"].max().date()
+    fecha_inicio, fecha_fin = st.slider(
+        "Rango de fechas",
+        min_value=min_fecha,
+        max_value=max_fecha,
+        value=(min_fecha, max_fecha),
+        format="%d/%m/%Y",
+    )
+
+    # Filtrar histórico y calcular efectividad mensual
+    df_branch = df[(df["COD_SUC"] == sucursal_hist)].copy()
+    df_branch = df_branch[(df_branch["FECHA"].dt.date >= fecha_inicio) & (df_branch["FECHA"].dt.date <= fecha_fin)]
+    df_branch["Mes"] = df_branch["FECHA"].dt.to_period("M").dt.to_timestamp()
+    mensual = (
+        df_branch
+        .groupby("Mes", as_index=False)
+        .agg({"T_AO": "sum", "T_AO_VENTA": "sum"})
+    )
+    mensual["Efectividad"] = mensual.apply(
+        lambda r: r["T_AO_VENTA"] / r["T_AO"] if r["T_AO"] > 0 else 0,
+        axis=1,
+    )
+
+    fig_eff = px.line(
+        mensual,
+        x="Mes",
+        y="Efectividad",
+        markers=True,
+        color_discrete_sequence=[ACCENT_COLOR],
+    )
+    fig_eff.update_layout(
+        plot_bgcolor=DARK_BG_COLOR,
+        paper_bgcolor=DARK_BG_COLOR,
+        font_color=WHITE,
+        title_font_color=WHITE,
+        yaxis_tickformat=".1%",
+        xaxis_title="Fecha",
+        yaxis_title="Efectividad",
+    )
+    fig_eff.update_xaxes(rangeslider_visible=True)
+    st.plotly_chart(fig_eff, use_container_width=True)
+
 with tab_pred:
     st.title("🔍 Predicción de Dotación y Efectividad por Hora")
 
