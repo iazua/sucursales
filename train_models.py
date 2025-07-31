@@ -11,6 +11,7 @@ from utils import estimar_parametros_efectividad
 MODEL_DIR = "models_prophet"
 PROPHET_DIR = "models_prophet"
 TARGETS = ["T_VISITAS", "T_AO"]
+DOTACION_TARGET = "DOTACION"
 HOURS_RANGE = list(range(9, 22))
 
 def load_data(path: str = "data/DOTACION_EFECTIVIDAD.xlsx") -> pd.DataFrame:
@@ -190,6 +191,41 @@ def generate_predictions(
             daily_preds[i] * weights for i in range(horizon)
         ])
         result[f"{t}_pred"] = hourly_preds
+
+    # --- Forecast DOTACION using saved Prophet results if available ---
+    try:
+        path_dot = os.path.join(PROPHET_DIR, f"{branch}_forecast.csv")
+        df_dot_f = pd.read_csv(path_dot)
+        df_dot_f["ds"] = pd.to_datetime(df_dot_f["ds"])
+        daily_dot_preds = (
+            df_dot_f.set_index("ds").reindex(pred_index)["yhat"].fillna(0).values
+        )
+    except FileNotFoundError:
+        baseline_dot = (
+            df_branch[df_branch["FECHA"].dt.year == 2024]
+            .groupby(["month", "weekday"])[DOTACION_TARGET]
+            .mean()
+        )
+        daily_dot_preds = []
+        for d in pred_index:
+            key = (d.month, d.weekday())
+            if key in baseline_dot.index:
+                val = baseline_dot.loc[key]
+            else:
+                val = baseline_dot.mean()
+            daily_dot_preds.append(val if pd.notna(val) else 0)
+        daily_dot_preds = np.array(daily_dot_preds)
+
+    if noise_scale > 0:
+        resid_std = float(df_branch[DOTACION_TARGET].std())
+        noise = np.random.normal(scale=resid_std * noise_scale, size=len(daily_dot_preds))
+        daily_dot_preds = np.clip(daily_dot_preds + noise, a_min=0, a_max=None)
+
+    weights_dot = _hourly_distribution(df_hist, branch, DOTACION_TARGET)
+    hourly_dot_preds = np.concatenate([
+        daily_dot_preds[i] * weights_dot for i in range(horizon)
+    ])
+    result["DOTACION_pred"] = hourly_dot_preds
 
     result["T_AO_VENTA_req"] = result["T_AO_pred"] * efectividad_obj
     result["P_EFECTIVIDAD_req"] = np.where(
