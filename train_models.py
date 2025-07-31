@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from prophet import Prophet
 from preprocessing import forecast_dotacion_prophet, forecast_target_prophet
+from utils import estimar_parametros_efectividad
 
 MODEL_DIR = "models_prophet"
 PROPHET_DIR = "models_prophet"
@@ -196,7 +197,34 @@ def generate_predictions(
         result["T_AO_VENTA_req"] / result["T_AO_pred"],
         0,
     )
-    result["DOTACION_req"] = (result["T_AO_pred"] / 10).round().astype(int)
+    # --- Required staffing based on desired effectiveness ---
+    hist_eff = df_branch[["DOTACION", "T_AO", "T_AO_VENTA"]].dropna()
+    if len(hist_eff) >= 3:
+        params_eff = estimar_parametros_efectividad(hist_eff)
+    else:
+        params_eff = {"L": 1.0, "k": 0.5, "x0_base": 5.0, "x0_factor_t_ao_venta": 0.05}
+
+    L = params_eff["L"]
+    k = params_eff["k"] if params_eff["k"] > 0 else 0.5
+    x0_base = params_eff["x0_base"]
+    x0_fac = params_eff["x0_factor_t_ao_venta"]
+
+    max_dot = float(df_branch["DOTACION"].max()) if "DOTACION" in df_branch.columns else 0
+
+    def _inv_sigmoid(eff: float, t_ao_v: float) -> float:
+        if eff <= 0:
+            return 0.0
+        if eff >= L:
+            return max_dot
+        x0 = x0_base - x0_fac * t_ao_v
+        val = x0 - (1.0 / k) * np.log(L / eff - 1)
+        return max(0.0, val)
+
+    dot_req = result["T_AO_VENTA_req"].apply(lambda v: _inv_sigmoid(efectividad_obj, v))
+    dot_capped = np.minimum(dot_req, max_dot)
+    result["DOTACION_req"] = dot_capped.round().astype(int)
+    result["DOTACION_gap"] = np.clip(dot_req - max_dot, a_min=0, a_max=None)
+
     return result
 
 
