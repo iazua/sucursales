@@ -24,6 +24,7 @@ TABLE_BG_COLOR = "#F8F9FA"
 ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
 WHITE = "#FFFFFF"
 BLACK = "#000000"
+GRID_COLOR = "#333333"  # Dark grid lines
 ACCENT_RGBA = "[241, 172, 75, 160]"  # Sandy Brown con opacidad
 PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
 # Mapeo de colores para series históricas y de predicción
@@ -410,10 +411,12 @@ with tab_mapa:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK,
+        title_font_color=WHITE,
         legend_title_font_color=BLACK,
         title='Totales por Zona'
     )
+    fig_zona.update_xaxes(showgrid=True, gridcolor=GRID_COLOR)
+    fig_zona.update_yaxes(showgrid=True, gridcolor=GRID_COLOR)
     st.plotly_chart(fig_zona, use_container_width=True)
 
     st.markdown("### Overview")
@@ -484,12 +487,13 @@ with tab_mapa:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK,
+        title_font_color=WHITE,
         yaxis_tickformat=".1%",
         xaxis_title="Fecha",
         yaxis_title="Efectividad",
     )
-    fig_eff.update_xaxes(rangeslider_visible=True)
+    fig_eff.update_xaxes(rangeslider_visible=True, gridcolor=GRID_COLOR)
+    fig_eff.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig_eff, use_container_width=True)
 
 with tab_pred:
@@ -832,9 +836,11 @@ with tab_pred:
         title=" ",
         legend_title_text="Modelo",
         barmode="group",
+        title_font_color=WHITE,
     )
-    fig.update_yaxes(title_text="Efectividad", secondary_y=False)
-    fig.update_yaxes(title_text="Δ Efectividad", secondary_y=True)
+    fig.update_yaxes(title_text="Efectividad", secondary_y=False, gridcolor=GRID_COLOR)
+    fig.update_yaxes(title_text="Δ Efectividad", secondary_y=True, gridcolor=GRID_COLOR)
+    fig.update_xaxes(gridcolor=GRID_COLOR)
 
     st.plotly_chart(fig, use_container_width=True)
 
@@ -902,9 +908,10 @@ with tab_pred:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK
+        title_font_color=WHITE
     )
-    fig.update_xaxes(rangeslider_visible=True)
+    fig.update_xaxes(rangeslider_visible=True, gridcolor=GRID_COLOR)
+    fig.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -957,9 +964,10 @@ with tab_pred:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK
+        title_font_color=WHITE
     )
-    fig.update_xaxes(rangeslider_visible=True)
+    fig.update_xaxes(rangeslider_visible=True, gridcolor=GRID_COLOR)
+    fig.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig, use_container_width=True)
 
     # --- GRÁFICO 3: Visitas diario ---
@@ -1010,9 +1018,10 @@ with tab_pred:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK
+        title_font_color=WHITE
     )
-    fig.update_xaxes(rangeslider_visible=True)
+    fig.update_xaxes(rangeslider_visible=True, gridcolor=GRID_COLOR)
+    fig.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig, use_container_width=True)
 
 # --- ANÁLISIS HISTÓRICO PONDERADO POR DÍA DE LA SEMANA ---
@@ -1079,9 +1088,11 @@ with tab_hist:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK,
+        title_font_color=WHITE,
         legend_title_font_color=BLACK
     )
+    fig.update_xaxes(gridcolor=GRID_COLOR)
+    fig.update_yaxes(gridcolor=GRID_COLOR)
 
     st.plotly_chart(fig, use_container_width=True)
 
@@ -1118,7 +1129,7 @@ with tab_hist:
                 plot_bgcolor=DARK_BG_COLOR,
                 paper_bgcolor=DARK_BG_COLOR,
                 font_color=BLACK,
-                title_font_color=BLACK
+                title_font_color=WHITE,
             ),
             use_container_width=True
         )
@@ -1137,7 +1148,7 @@ with tab_hist:
                 plot_bgcolor=DARK_BG_COLOR,
                 paper_bgcolor=DARK_BG_COLOR,
                 font_color=BLACK,
-                title_font_color=BLACK
+                title_font_color=WHITE,
             ),
             use_container_width=True
         )
@@ -1222,9 +1233,11 @@ with tab_turno:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK,
+        title_font_color=WHITE,
         legend_title_font_color=BLACK
     )
+    fig.update_xaxes(gridcolor=GRID_COLOR)
+    fig.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig, use_container_width=True)
 
     # ——— KPI de conversión visitas → ofertas aceptadas por turno ———
@@ -1303,8 +1316,10 @@ with tab_turno:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK
+        title_font_color=WHITE
     )
+    fig.update_xaxes(gridcolor=GRID_COLOR)
+    fig.update_yaxes(gridcolor=GRID_COLOR)
 
     st.plotly_chart(fig, use_container_width=True)
 
@@ -1354,8 +1369,11 @@ with tab_turno:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        margin=dict(t=80, b=40, l=60, r=40)
+        margin=dict(t=80, b=40, l=60, r=40),
+        title_font_color=WHITE
     )
+    fig.update_xaxes(gridcolor=GRID_COLOR)
+    fig.update_yaxes(gridcolor=GRID_COLOR)
 
     st.plotly_chart(fig, use_container_width=True)
 
@@ -1412,9 +1430,11 @@ with tab_turno:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK,
+        title_font_color=WHITE,
         legend_title_font_color=BLACK
     )
+    fig.update_xaxes(gridcolor=GRID_COLOR)
+    fig.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig, use_container_width=True)
 
     # ——— Boxplot de productividad (T_AO / DOTACION) por turno ———
@@ -1451,9 +1471,11 @@ with tab_turno:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK,
+        title_font_color=WHITE,
         yaxis_tickformat='.2f'
     )
+    fig.update_xaxes(gridcolor=GRID_COLOR)
+    fig.update_yaxes(gridcolor=GRID_COLOR)
 
     st.plotly_chart(fig, use_container_width=True)
 
@@ -1688,9 +1710,11 @@ with tab_turno:
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
         font_color=BLACK,
-        title_font_color=BLACK,
+        title_font_color=WHITE,
         yaxis_tickformat='.2f'
     )
+    fig_box_eff.update_xaxes(gridcolor=GRID_COLOR)
+    fig_box_eff.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig_box_eff, use_container_width=True)
 
     st.markdown("---")
