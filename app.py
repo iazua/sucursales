@@ -15,11 +15,12 @@ from plotly.subplots import make_subplots
 # Paleta oficial Banco
 
 PRIMARY_COLOR = "#4F2D7F"  # Minsk
-DARK_BG_COLOR = "#361860"  # Scarlet Gum
+# Fondo general claro para el modo light
+DARK_BG_COLOR = "#FFFFFF"  # Light background
 # Color de fondo para secciones claras y tablas
 PRIMARY_BG = "#F8F9FA"
-# Usamos el mismo tono oscuro institucional para las tablas
-TABLE_BG_COLOR = DARK_BG_COLOR
+# Color de las tablas sobre fondo claro
+TABLE_BG_COLOR = "#F8F9FA"
 ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
 WHITE = "#FFFFFF"
 BLACK = "#000000"
@@ -72,7 +73,7 @@ st.markdown(
     }}
     /* Aseguramos mismo color de los encabezados en todas las plataformas */
     h1, h2, h3, h4, h5, h6 {{
-      color: var(--white);
+      color: var(--black);
     }}
     /* Fondo general */
     .stApp, .css-1d391kg {{
@@ -81,7 +82,7 @@ st.markdown(
     /* DataFrame: fondo de la tabla y de las celdas */
     .stDataFrame div[role="table"] {{
       background-color: var(--table-bg) !important;
-      color: var(--white);
+      color: var(--black);
     }}
     /* Para los encabezados de tabla */
     .stDataFrame th {{
@@ -146,7 +147,7 @@ st.markdown(
       box-shadow: 0 0 0 4px rgba(241, 172, 75, 0.5);
     }}
     .slider-label {{
-      color: var(--white);
+      color: var(--black);
       font-weight: 600;
       margin-bottom: 0.25rem;
     }}
@@ -161,7 +162,7 @@ st.markdown(
     }}
     div[data-testid="stDataFrame"] table {{
       background-color: var(--table-bg) !important;
-      color: var(--white) !important;
+      color: var(--black) !important;
     }}
     div[data-testid="stDataFrame"] th {{
       background-color: var(--primary) !important;
@@ -169,7 +170,7 @@ st.markdown(
     }}
     .stTable table {{
       background-color: var(--table-bg) !important;
-      color: var(--white);
+      color: var(--black);
     }}
     .stTable th {{
       background-color: var(--primary) !important;
@@ -183,7 +184,7 @@ st.markdown(
     /* Dropdown integrado */
     .stSelectbox div[data-baseweb="select"] > div {{
       background-color: var(--dark-bg);
-      color: var(--white);
+      color: var(--black);
       border-color: var(--primary);
     }}
     .stSelectbox div[data-baseweb="select"] > div:hover {{
@@ -357,7 +358,7 @@ with tab_mapa:
                 "<b>Ofertas aceptadas de venta:</b> {T_AO_VENTA} ({label_ao_venta})<br>"
                 "<b>Efectividad:</b> {label_efectividad}"
             ),
-            "style": {"backgroundColor": ACCENT_COLOR, "color": DARK_BG_COLOR}
+            "style": {"backgroundColor": ACCENT_COLOR, "color": BLACK}
         }
     ), use_container_width=True)
 
@@ -408,9 +409,9 @@ with tab_mapa:
     fig_zona.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE,
-        legend_title_font_color=WHITE,
+        font_color=BLACK,
+        title_font_color=BLACK,
+        legend_title_font_color=BLACK,
         title='Totales por Zona'
     )
     st.plotly_chart(fig_zona, use_container_width=True)
@@ -482,8 +483,8 @@ with tab_mapa:
     fig_eff.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE,
+        font_color=BLACK,
+        title_font_color=BLACK,
         yaxis_tickformat=".1%",
         xaxis_title="Fecha",
         yaxis_title="Efectividad",
@@ -827,7 +828,7 @@ with tab_pred:
     fig.update_layout(
         paper_bgcolor=DARK_BG_COLOR,
         plot_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
+        font_color=BLACK,
         title=" ",
         legend_title_text="Modelo",
         barmode="group",
@@ -900,8 +901,8 @@ with tab_pred:
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE
+        font_color=BLACK,
+        title_font_color=BLACK
     )
     fig.update_xaxes(rangeslider_visible=True)
     st.plotly_chart(fig, use_container_width=True)
@@ -955,8 +956,8 @@ with tab_pred:
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE
+        font_color=BLACK,
+        title_font_color=BLACK
     )
     fig.update_xaxes(rangeslider_visible=True)
     st.plotly_chart(fig, use_container_width=True)
@@ -1008,8 +1009,8 @@ with tab_pred:
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE
+        font_color=BLACK,
+        title_font_color=BLACK
     )
     fig.update_xaxes(rangeslider_visible=True)
     st.plotly_chart(fig, use_container_width=True)
@@ -1077,9 +1078,9 @@ with tab_hist:
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE,
-        legend_title_font_color=WHITE
+        font_color=BLACK,
+        title_font_color=BLACK,
+        legend_title_font_color=BLACK
     )
 
     st.plotly_chart(fig, use_container_width=True)
@@ -1116,8 +1117,8 @@ with tab_hist:
             ).update_layout(
                 plot_bgcolor=DARK_BG_COLOR,
                 paper_bgcolor=DARK_BG_COLOR,
-                font_color=WHITE,
-                title_font_color=WHITE
+                font_color=BLACK,
+                title_font_color=BLACK
             ),
             use_container_width=True
         )
@@ -1135,8 +1136,8 @@ with tab_hist:
             ).update_layout(
                 plot_bgcolor=DARK_BG_COLOR,
                 paper_bgcolor=DARK_BG_COLOR,
-                font_color=WHITE,
-                title_font_color=WHITE
+                font_color=BLACK,
+                title_font_color=BLACK
             ),
             use_container_width=True
         )
@@ -1220,9 +1221,9 @@ with tab_turno:
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE,
-        legend_title_font_color=WHITE
+        font_color=BLACK,
+        title_font_color=BLACK,
+        legend_title_font_color=BLACK
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -1301,8 +1302,8 @@ with tab_turno:
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE
+        font_color=BLACK,
+        title_font_color=BLACK
     )
 
     st.plotly_chart(fig, use_container_width=True)
@@ -1352,7 +1353,7 @@ with tab_turno:
         title_text=f'Efectividad diaria por turno ({rango_seleccionado})',
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
+        font_color=BLACK,
         margin=dict(t=80, b=40, l=60, r=40)
     )
 
@@ -1410,9 +1411,9 @@ with tab_turno:
         yaxis_tickformat='.2f',
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE,
-        legend_title_font_color=WHITE
+        font_color=BLACK,
+        title_font_color=BLACK,
+        legend_title_font_color=BLACK
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -1449,8 +1450,8 @@ with tab_turno:
     fig.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE,
+        font_color=BLACK,
+        title_font_color=BLACK,
         yaxis_tickformat='.2f'
     )
 
@@ -1686,8 +1687,8 @@ with tab_turno:
     fig_box_eff.update_layout(
         plot_bgcolor=DARK_BG_COLOR,
         paper_bgcolor=DARK_BG_COLOR,
-        font_color=WHITE,
-        title_font_color=WHITE,
+        font_color=BLACK,
+        title_font_color=BLACK,
         yaxis_tickformat='.2f'
     )
     st.plotly_chart(fig_box_eff, use_container_width=True)
