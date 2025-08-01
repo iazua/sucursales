@@ -601,7 +601,6 @@ with tab_pred:
         "HORA",
         "T_VISITAS_pred",
         "T_AO_pred",
-        "DOTACION_pred",
         "T_AO_VENTA_req",
         "P_EFECTIVIDAD_req",
         "DOTACION_req",
@@ -617,7 +616,6 @@ with tab_pred:
         "HORA": "Hora",
         "T_VISITAS_pred": "Visitas estimadas",
         "T_AO_pred": "Ofertas aceptadas estimadas",
-        "DOTACION_pred": "Dotación estimada",
         "T_AO_VENTA_req": "Ventas requeridas",
         "P_EFECTIVIDAD_req": "% Efectividad requerida",
         "DOTACION_req": "Dotación requerida",
@@ -629,7 +627,6 @@ with tab_pred:
     df_hourly["Ofertas aceptadas estimadas"] = df_hourly["Ofertas aceptadas estimadas"].round(0).astype(int)
     df_hourly["Ventas requeridas"] = df_hourly["Ventas requeridas"].round(0).astype(int)
     df_hourly["% Efectividad requerida"] = df_hourly["% Efectividad requerida"].round(2)
-    df_hourly["Dotación estimada"] = df_hourly["Dotación estimada"].round(0).astype(int)
     df_hourly["Dotación requerida"] = df_hourly["Dotación requerida"].round(0).astype(int)
     df_hourly["Gap dotación"] = df_hourly["Gap dotación"].round(1)
 
@@ -639,7 +636,6 @@ with tab_pred:
         "Visitas estimadas",
         "Ofertas aceptadas estimadas",
         "Ventas requeridas",
-        "Dotación estimada",
         "Dotación requerida",
         "Gap dotación",
     ]:
@@ -650,7 +646,7 @@ with tab_pred:
         "Fecha registro", "Día", "Hora",
         "Visitas estimadas", "Ofertas aceptadas estimadas",
         "Ventas requeridas", "% Efectividad requerida",
-        "Dotación estimada", "Dotación requerida", "Gap dotación"
+        "Dotación requerida", "Gap dotación"
     ]]
     df_hourly_display = df_hourly_display[df_hourly.columns]
 
@@ -667,7 +663,6 @@ with tab_pred:
             "Ofertas aceptadas estimadas": "sum",
             "Ventas requeridas": "sum",
             "% Efectividad requerida": "mean",
-            "Dotación estimada": "mean",
             "Dotación requerida": "mean",
             "Gap dotación": "mean",
         })
@@ -675,7 +670,6 @@ with tab_pred:
 
     # Redondeo final de efectividad
     df_daily["% Efectividad requerida"] = df_daily["% Efectividad requerida"].round(2)
-    df_daily["Dotación estimada"] = df_daily["Dotación estimada"].round(1)
     df_daily["Dotación requerida"] = df_daily["Dotación requerida"].round(1)
     df_daily["Gap dotación"] = df_daily["Gap dotación"].round(1)
 
@@ -689,7 +683,6 @@ with tab_pred:
         "Visitas estimadas",
         "Ofertas aceptadas estimadas",
         "Ventas requeridas",
-        "Dotación estimada",
         "Dotación requerida",
         "Gap dotación",
     ]:
@@ -702,7 +695,6 @@ with tab_pred:
         "Ofertas aceptadas estimadas",
         "Ventas requeridas",
         "% Efectividad requerida",
-        "Dotación estimada",
         "Dotación requerida",
         "Gap dotación",
     ]]
