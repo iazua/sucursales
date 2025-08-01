@@ -683,10 +683,24 @@ with tab_pred:
                        valueFormatter="params.value.toFixed(2)")
     gb.configure_column("Dotación requerida", type=["numericColumn"], aggFunc="avg",
                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
-    gb.configure_column("Dotación histórica", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
-    gb.configure_column("Ajuste dotación", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
+    gb.configure_column(
+        "Dotación histórica",
+        type=["numericColumn"],
+        aggFunc="avg",
+        valueFormatter=(
+            "params.node.group ? Number(params.value).toFixed(2) : "
+            "Math.round(params.value).toLocaleString('es-ES')"
+        ),
+    )
+    gb.configure_column(
+        "Ajuste dotación",
+        type=["numericColumn"],
+        aggFunc="avg",
+        valueFormatter=(
+            "params.node.group ? Number(params.value).toFixed(2) : "
+            "Math.round(params.value).toLocaleString('es-ES')"
+        ),
+    )
     gb.configure_grid_options(groupDefaultExpanded=0)
     grid_options = gb.build()
 
