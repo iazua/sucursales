@@ -5,6 +5,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from preprocessing import forecast_target_prophet
 
+PRIMARY_BG = "#F8F1FA"  # Same background color used in the Streamlit app
+plt.rcParams["figure.facecolor"] = PRIMARY_BG
+plt.rcParams["axes.facecolor"] = PRIMARY_BG
+
 PROPHET_DIR = "models_prophet"
 TARGETS = ["T_VISITAS", "T_AO"]
 
@@ -47,7 +51,7 @@ def deploy_forecasts(df: pd.DataFrame, horizon_days: int = 365, changepoint_prio
             csv_name = f"{branch}_{target}_forecast.csv"
             forecast.to_csv(os.path.join(PROPHET_DIR, csv_name), index=False)
 
-            plt.figure()
+            plt.figure(facecolor=PRIMARY_BG)
             plt.plot(forecast["ds"], forecast["yhat"], label="forecast")
             plt.fill_between(
                 forecast["ds"],
@@ -59,6 +63,7 @@ def deploy_forecasts(df: pd.DataFrame, horizon_days: int = 365, changepoint_prio
             plt.xlabel("date")
             plt.ylabel(target)
             plt.legend()
+            plt.gca().set_facecolor(PRIMARY_BG)
             plt.grid(color="dimgray")
             plt.tight_layout()
             plot_name = f"{branch}_{target}_forecast.png"
