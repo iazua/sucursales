@@ -689,7 +689,16 @@ with tab_pred:
         }
         """
     )
+    dia_renderer = JsCode(
+        """
+        function(params) {
+            // Show the day only on the group (date) rows
+            return params.node.group ? params.value : '';
+        }
+        """
+    )
     gb.configure_column("Fecha registro", header_name="Fecha", rowGroup=True, hide=True)
+    gb.configure_column("Día", aggFunc="first", cellRenderer=dia_renderer)
     gb.configure_column("Hora", type=["numericColumn"])
     gb.configure_column("Visitas estimadas", type=["numericColumn"], aggFunc="sum",
                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
