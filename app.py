@@ -18,6 +18,8 @@ from plotly.subplots import make_subplots
 PRIMARY_COLOR = "#4F2D7F"  # Minsk
 # Fondo general claro para el modo light
 DARK_BG_COLOR = "#FFFFFF"  # Light background
+# Fondo de la página con gradiente corporativo
+BG_GRADIENT = f"linear-gradient(135deg, {PRIMARY_COLOR} 0%, {ACCENT_COLOR} 100%)"
 # Color de fondo para secciones claras y tablas
 PRIMARY_BG = "#F8F9FA"
 # Color de las tablas sobre fondo claro
@@ -72,14 +74,15 @@ st.markdown(
       --accent: {ACCENT_COLOR};
       --white: {WHITE};
       --black: {BLACK};
+      --bg-gradient: {BG_GRADIENT};
     }}
     /* Aseguramos mismo color de los encabezados en todas las plataformas */
     h1, h2, h3, h4, h5, h6 {{
       color: var(--black);
     }}
-    /* Fondo general */
+    /* Fondo general con gradiente corporativo */
     .stApp, .css-1d391kg {{
-      background-color: var(--dark-bg);
+      background: var(--bg-gradient);
     }}
     /* DataFrame: fondo de la tabla y de las celdas */
     .stDataFrame div[role="table"] {{
