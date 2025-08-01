@@ -647,10 +647,12 @@ with tab_pred:
         val = avg_dot_map.get(key, np.nan)
         return int(round(val)) if not pd.isna(val) else np.nan
 
-    df_hourly["Dotación histórica"] = df_hourly.apply(_avg_hist, axis=1)
+    df_hourly["Dotación histórica"] = (
+        df_hourly.apply(_avg_hist, axis=1)
+    ).round(0).astype("Int64")
     df_hourly["Ajuste dotación"] = (
         df_hourly["Dotación requerida"] - df_hourly["Dotación histórica"]
-    ).round(0)
+    ).round(0).astype("Int64")
 
 
     # 5) Seleccionamos el orden final de columnas
