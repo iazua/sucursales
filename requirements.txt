@@ -13,3 +13,4 @@ workalendar
 openpyxl
 prophet
 streamlit-authenticator
+streamlit-aggrid
