@@ -8,6 +8,7 @@ from preprocessing import assign_turno
 from utils import calcular_efectividad, estimar_dotacion_optima, estimar_parametros_efectividad
 import pydeck as pdk
 import plotly.graph_objects as go
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 from plotly.subplots import make_subplots
 
@@ -648,17 +649,6 @@ with tab_pred:
     df_hourly["Dotación histórica"] = df_hourly.apply(_avg_hist, axis=1)
     df_hourly["Ajuste dotación"] = (df_hourly["Dotación requerida"] - df_hourly["Dotación histórica"]).round(1)
 
-    # Preparamos una copia solo para mostrar, aplicando formato de miles
-    df_hourly_display = df_hourly.copy()
-    for col in [
-        "Visitas estimadas",
-        "Ofertas aceptadas estimadas",
-        "Ventas requeridas",
-        "Dotación requerida",
-        "Dotación histórica",
-        "Ajuste dotación",
-    ]:
-        df_hourly_display[col] = df_hourly_display[col].apply(lambda x: f"{x:,}".replace(',', '.'))
 
     # 5) Seleccionamos el orden final de columnas
     df_hourly = df_hourly[[
@@ -667,72 +657,38 @@ with tab_pred:
         "Ventas requeridas", "% Efectividad requerida",
         "Dotación requerida", "Dotación histórica", "Ajuste dotación"
     ]]
-    df_hourly_display = df_hourly_display[df_hourly.columns]
 
-    # ——— TABLA POR DÍA ———
-    st.subheader("Por día")
+    st.subheader("Predicción diaria y horaria")
 
-    df_daily = (
-        df_hourly
-        .groupby(["Fecha registro", "Día"], as_index=False)
-        .agg({
-            "Visitas estimadas": "sum",
-            "Ofertas aceptadas estimadas": "sum",
-            "Ventas requeridas": "sum",
-            "% Efectividad requerida": "mean",
-            "Dotación requerida": "mean",
-            "Dotación histórica": "mean",
-            "Ajuste dotación": "mean",
-        })
+    df_grid = df_hourly.copy()
+    gb = GridOptionsBuilder.from_dataframe(df_grid)
+    gb.configure_column("Fecha registro", header_name="Fecha", rowGroup=True, hide=True)
+    gb.configure_column("Día", hide=True)
+    gb.configure_column("Hora", type=["numericColumn"])
+    gb.configure_column("Visitas estimadas", type=["numericColumn"], aggFunc="sum",
+                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
+    gb.configure_column("Ofertas aceptadas estimadas", type=["numericColumn"], aggFunc="sum",
+                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
+    gb.configure_column("Ventas requeridas", type=["numericColumn"], aggFunc="sum",
+                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
+    gb.configure_column("% Efectividad requerida", type=["numericColumn"], aggFunc="avg",
+                       valueFormatter="params.value.toFixed(2)")
+    gb.configure_column("Dotación requerida", type=["numericColumn"], aggFunc="avg",
+                       valueFormatter="params.value.toFixed(1)")
+    gb.configure_column("Dotación histórica", type=["numericColumn"], aggFunc="avg",
+                       valueFormatter="params.value.toFixed(1)")
+    gb.configure_column("Ajuste dotación", type=["numericColumn"], aggFunc="avg",
+                       valueFormatter="params.value.toFixed(1)")
+    gb.configure_grid_options(groupDefaultExpanded=0)
+    grid_options = gb.build()
+
+    AgGrid(
+        df_grid,
+        gridOptions=grid_options,
+        enable_enterprise_modules=True,
+        allow_unsafe_jscode=True,
+        use_container_width=True,
     )
-
-    # Redondeo final de efectividad
-    df_daily["% Efectividad requerida"] = df_daily["% Efectividad requerida"].round(2)
-    df_daily["Dotación requerida"] = df_daily["Dotación requerida"].round(1)
-    df_daily["Dotación histórica"] = df_daily["Dotación histórica"].round(1)
-    df_daily["Ajuste dotación"] = df_daily["Ajuste dotación"].round(1)
-
-    # Orden cronológico
-    df_daily["_dt"] = pd.to_datetime(df_daily["Fecha registro"], format="%d-%m-%Y")
-    df_daily = df_daily.sort_values("_dt").drop(columns="_dt")
-
-    # Preparamos una copia formateada solo para mostrar
-    df_daily_display = df_daily.copy()
-    for col in [
-        "Visitas estimadas",
-        "Ofertas aceptadas estimadas",
-        "Ventas requeridas",
-        "Dotación requerida",
-        "Dotación histórica",
-        "Ajuste dotación",
-    ]:
-        df_daily_display[col] = df_daily_display[col].apply(lambda x: f"{round(x,1):,}".replace(',', '.'))
-
-    df_daily = df_daily[[
-        "Fecha registro",
-        "Día",
-        "Visitas estimadas",
-        "Ofertas aceptadas estimadas",
-        "Ventas requeridas",
-        "% Efectividad requerida",
-        "Dotación requerida",
-        "Dotación histórica",
-        "Ajuste dotación",
-    ]]
-    df_daily_display = df_daily_display[df_daily.columns]
-
-    st.dataframe(df_daily_display, use_container_width=True, hide_index=True)
-
-    dias_disp = df_daily["Fecha registro"].unique().tolist()
-    selected_day = st.selectbox(
-        "Selecciona un día para ver detalle por hora",
-        dias_disp,
-    )
-
-    df_hourly_selected = df_hourly_display[df_hourly_display["Fecha registro"] == selected_day]
-
-    st.subheader(f"Detalle por hora - {selected_day}")
-    st.dataframe(df_hourly_selected, use_container_width=True, hide_index=True)
 
     # --- RECOMENDACIONES POR DíA Y TURNO ---
     df_rec = df_hourly.copy()
