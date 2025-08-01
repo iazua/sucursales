@@ -14,6 +14,7 @@ from plotly.subplots import make_subplots
 
 # ---------------------------------------------------------------------------
 # Paleta oficial Banco
+ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
 
 PRIMARY_COLOR = "#4F2D7F"  # Minsk
 # Fondo general claro para el modo light
@@ -24,7 +25,6 @@ BG_GRADIENT = f"linear-gradient(135deg, {PRIMARY_COLOR} 0%, {ACCENT_COLOR} 100%)
 PRIMARY_BG = "#F8F1FA"
 # Color de las tablas sobre fondo claro
 TABLE_BG_COLOR = "#F8F9FA"
-ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
 WHITE = "#FFFFFF"
 BLACK = "#000000"
 GRID_COLOR = "#333333"  # Dark grid lines
