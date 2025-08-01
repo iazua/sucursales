@@ -644,10 +644,13 @@ with tab_pred:
     # 4.b) Dotación histórica y ajuste necesario
     def _avg_hist(row):
         key = (row["weekday"], row["Hora"])
-        return round(avg_dot_map.get(key, np.nan), 1)
+        val = avg_dot_map.get(key, np.nan)
+        return int(round(val)) if not pd.isna(val) else np.nan
 
     df_hourly["Dotación histórica"] = df_hourly.apply(_avg_hist, axis=1)
-    df_hourly["Ajuste dotación"] = (df_hourly["Dotación requerida"] - df_hourly["Dotación histórica"]).round(1)
+    df_hourly["Ajuste dotación"] = (
+        df_hourly["Dotación requerida"] - df_hourly["Dotación histórica"]
+    ).round(0)
 
 
     # 5) Seleccionamos el orden final de columnas
@@ -674,11 +677,11 @@ with tab_pred:
     gb.configure_column("% Efectividad requerida", type=["numericColumn"], aggFunc="avg",
                        valueFormatter="params.value.toFixed(2)")
     gb.configure_column("Dotación requerida", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter="params.value.toFixed(1)")
+                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_column("Dotación histórica", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter="params.value.toFixed(1)")
+                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_column("Ajuste dotación", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter="params.value.toFixed(1)")
+                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_grid_options(groupDefaultExpanded=0)
     grid_options = gb.build()
 
@@ -688,6 +691,7 @@ with tab_pred:
         enable_enterprise_modules=True,
         allow_unsafe_jscode=True,
         use_container_width=True,
+        fit_columns_on_grid_load=True,
     )
 
     # --- RECOMENDACIONES POR DíA Y TURNO ---
