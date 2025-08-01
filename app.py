@@ -21,7 +21,7 @@ DARK_BG_COLOR = "#FFFFFF"  # Light background
 # Fondo de la página con gradiente corporativo
 BG_GRADIENT = f"linear-gradient(135deg, {PRIMARY_COLOR} 0%, {ACCENT_COLOR} 100%)"
 # Color de fondo para secciones claras y tablas
-PRIMARY_BG = "#F8F9FA"
+PRIMARY_BG = "#F8F1FA"
 # Color de las tablas sobre fondo claro
 TABLE_BG_COLOR = "#F8F9FA"
 ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
