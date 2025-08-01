@@ -688,7 +688,7 @@ with tab_pred:
         """
     )
     gb.configure_column("Fecha registro", header_name="Fecha", rowGroup=True, hide=True)
-    gb.configure_column("Día", hide=True)
+    gb.configure_column("Día", header_name="Día de la semana")
     gb.configure_column("Hora", type=["numericColumn"])
     gb.configure_column("Visitas estimadas", type=["numericColumn"], aggFunc="sum",
                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
