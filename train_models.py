@@ -6,7 +6,11 @@ import pandas as pd
 import numpy as np
 from prophet import Prophet
 from preprocessing import forecast_dotacion_prophet, forecast_target_prophet
-from utils import estimar_parametros_efectividad, estimar_dotacion_optima
+from utils import (
+    estimar_parametros_efectividad,
+    estimar_parametros_efectividad_por_dia,
+    estimar_dotacion_optima,
+)
 
 MODEL_DIR = "models_prophet"
 PROPHET_DIR = "models_prophet"
@@ -199,21 +203,21 @@ def generate_predictions(
         0,
     )
     # --- Required staffing based on desired effectiveness ---
-    hist_eff = df_branch[["DOTACION", "T_AO", "T_AO_VENTA"]].dropna()
-    if len(hist_eff) >= 3:
-        params_eff = estimar_parametros_efectividad(hist_eff)
-    else:
-        params_eff = {"L": 1.0, "k": 0.5, "x0_base": 5.0, "x0_factor_t_ao_venta": 0.05}
+    hist_eff = df_branch[["FECHA", "DOTACION", "T_AO", "T_AO_VENTA"]].dropna()
+    params_eff = estimar_parametros_efectividad(hist_eff[["DOTACION", "T_AO", "T_AO_VENTA"]])
+    params_eff_by_day = estimar_parametros_efectividad_por_dia(hist_eff)
 
     max_dot = float(df_branch["DOTACION"].max()) if "DOTACION" in df_branch.columns else 0
 
     result["DOTACION_req"] = 0
     for fecha, grp in result.groupby("FECHA"):
+        weekday = fecha.weekday()
+        params_day = params_eff_by_day.get(weekday, params_eff)
         dot_opt, _ = estimar_dotacion_optima(
             grp["T_AO_pred"],
             grp["T_AO_VENTA_req"],
             efectividad_obj,
-            params_eff,
+            params_day,
         )
         dot_final = int(np.minimum(dot_opt, max_dot))
         result.loc[result["FECHA"] == fecha, "DOTACION_req"] = dot_final

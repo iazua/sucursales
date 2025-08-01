@@ -172,6 +172,35 @@ def estimar_parametros_efectividad(df_historico):
         return {'L': 1.0, 'k': 0.5, 'x0_base': 5.0, 'x0_factor_t_ao_venta': 0.05}
 
 
+def estimar_parametros_efectividad_por_dia(df_historico: pd.DataFrame) -> dict:
+    """Calcula parámetros de efectividad por día de la semana.
+
+    Parameters
+    ----------
+    df_historico : pd.DataFrame
+        DataFrame con columnas ``FECHA``, ``DOTACION``, ``T_AO`` y ``T_AO_VENTA``.
+
+    Returns
+    -------
+    dict
+        Diccionario que mapea ``weekday`` (0 = lunes) a un set de parámetros
+        para ``_modelo_efectividad``.
+    """
+
+    if "FECHA" not in df_historico.columns:
+        raise ValueError("df_historico debe incluir la columna FECHA")
+
+    df = df_historico.copy()
+    df["weekday"] = pd.to_datetime(df["FECHA"]).dt.weekday
+
+    params_by_day = {}
+    for day in range(7):
+        subset = df[df["weekday"] == day][["DOTACION", "T_AO", "T_AO_VENTA"]]
+        params_by_day[day] = estimar_parametros_efectividad(subset)
+
+    return params_by_day
+
+
 def estimar_dotacion_optima(t_ao_preds, t_ao_venta_preds, efectividad_deseada=0.8, params_efectividad=None):
     """
     Estima la dotación óptima para un conjunto de predicciones de T_AO y T_AO_VENTA
