@@ -18,14 +18,16 @@ ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
 
 PRIMARY_COLOR = "#422D7F"  # Minsk
 # Color de fondo para secciones claras y tablas
-PRIMARY_BG = "#F8F1FA"
+PRIMARY_BG = "#F5F1FA"
 # Fondo general claro para el modo light
 DARK_BG_COLOR = "#FFFFFF"  # Light background
-# Fondo para las gráficas
-GRAPH_BG_COLOR = PRIMARY_BG
+# Fondo transparente para las gráficas
+GRAPH_BG_COLOR = "rgba(0, 0, 0, 0)"
 
 # Fondo de la página con gradiente corporativo
 BG_GRADIENT = f"linear-gradient(135deg, {PRIMARY_COLOR} 0%, {ACCENT_COLOR} 100%)"
+# Color de fondo para secciones claras y tablas
+PRIMARY_BG = "#F8F1FA"
 # Color de las tablas sobre fondo claro
 TABLE_BG_COLOR = "#F8F9FA"
 WHITE = "#FFFFFF"
@@ -36,13 +38,13 @@ PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
 # Mapeo de colores para series históricas y de predicción
 COLOR_DISCRETE_MAP = {
     "Histórico": ACCENT_COLOR,
-    "Escenario base": PRIMARY_COLOR,
+    "Escenario base": PRIMARY_BG,
     "Escenario alterno": "#FF4B4B",  # rojo para diferenciar el escenario alterno
 }
 # Colores para series donde se muestran dos categorías
 # (e.g. Semana vs Fin de Semana) en gráficas de torta o barras
-COLOR_SEQUENCE = [ACCENT_COLOR, PRIMARY_COLOR]
-PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_COLOR}
+COLOR_SEQUENCE = [ACCENT_COLOR, PRIMARY_BG]
+PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
 # ---------------------------------------------------------------------------
 
 # --- CONSTANTES ---
