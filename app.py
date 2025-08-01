@@ -629,13 +629,9 @@ with tab_pred:
         "DOTACION_req",
     ]].copy()
 
-    # 2) Formateamos FECHA, añadimos día de la semana y
-    #     combinamos ambos para la fila de grupo
+    # 2) Formateamos FECHA y añadimos el nombre del día en columna aparte
     df_hourly["Día"] = df_hourly["FECHA"].dt.day_name().map(DAY_NAME_MAP_ES)
-    df_hourly["Fecha registro"] = (
-        df_hourly["FECHA"].dt.strftime("%d-%m-%Y") +
-        " (" + df_hourly["Día"] + ")"
-    )
+    df_hourly["Fecha registro"] = df_hourly["FECHA"].dt.strftime("%d-%m-%Y")
     df_hourly["weekday"] = df_hourly["FECHA"].dt.dayofweek
 
     # 3) Renombramos cada métrica de forma explícita
@@ -677,8 +673,8 @@ with tab_pred:
         "Dotación requerida", "Dotación histórica", "Ajuste dotación"
     ]]
 
-    # Copia para la tabla dinámica sin repetir el día por cada hora
-    df_grid = df_hourly.drop(columns=["Día"]).copy()
+    # Copia para la tabla dinámica (con el día en columna aparte)
+    df_grid = df_hourly.copy()
 
     st.subheader("Predicción diaria y horaria")
     gb = GridOptionsBuilder.from_dataframe(df_grid)
