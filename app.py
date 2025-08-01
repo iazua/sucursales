@@ -613,7 +613,6 @@ with tab_pred:
         "T_AO_VENTA_req",
         "P_EFECTIVIDAD_req",
         "DOTACION_req",
-        "DOTACION_gap",
     ]].copy()
 
     # 2) Formateamos FECHA y añadimos día de la semana
@@ -629,7 +628,6 @@ with tab_pred:
         "T_AO_VENTA_req": "Ventas requeridas",
         "P_EFECTIVIDAD_req": "% Efectividad requerida",
         "DOTACION_req": "Dotación requerida",
-        "DOTACION_gap": "Gap dotación",
     })
 
     # 4) Redondeamos y transformamos tipos
@@ -638,7 +636,6 @@ with tab_pred:
     df_hourly["Ventas requeridas"] = df_hourly["Ventas requeridas"].round(0).astype(int)
     df_hourly["% Efectividad requerida"] = df_hourly["% Efectividad requerida"].round(2)
     df_hourly["Dotación requerida"] = df_hourly["Dotación requerida"].round(0).astype(int)
-    df_hourly["Gap dotación"] = df_hourly["Gap dotación"].round(1)
 
     # 4.b) Dotación histórica y ajuste necesario
     def _avg_hist(row):
@@ -657,7 +654,6 @@ with tab_pred:
         "Dotación requerida",
         "Dotación histórica",
         "Ajuste dotación",
-        "Gap dotación",
     ]:
         df_hourly_display[col] = df_hourly_display[col].apply(lambda x: f"{x:,}".replace(',', '.'))
 
@@ -666,8 +662,7 @@ with tab_pred:
         "Fecha registro", "Día", "Hora",
         "Visitas estimadas", "Ofertas aceptadas estimadas",
         "Ventas requeridas", "% Efectividad requerida",
-        "Dotación requerida", "Dotación histórica", "Ajuste dotación",
-        "Gap dotación"
+        "Dotación requerida", "Dotación histórica", "Ajuste dotación"
     ]]
     df_hourly_display = df_hourly_display[df_hourly.columns]
 
@@ -687,7 +682,6 @@ with tab_pred:
             "Dotación requerida": "mean",
             "Dotación histórica": "mean",
             "Ajuste dotación": "mean",
-            "Gap dotación": "mean",
         })
     )
 
@@ -696,7 +690,6 @@ with tab_pred:
     df_daily["Dotación requerida"] = df_daily["Dotación requerida"].round(1)
     df_daily["Dotación histórica"] = df_daily["Dotación histórica"].round(1)
     df_daily["Ajuste dotación"] = df_daily["Ajuste dotación"].round(1)
-    df_daily["Gap dotación"] = df_daily["Gap dotación"].round(1)
 
     # Orden cronológico
     df_daily["_dt"] = pd.to_datetime(df_daily["Fecha registro"], format="%d-%m-%Y")
@@ -711,7 +704,6 @@ with tab_pred:
         "Dotación requerida",
         "Dotación histórica",
         "Ajuste dotación",
-        "Gap dotación",
     ]:
         df_daily_display[col] = df_daily_display[col].apply(lambda x: f"{round(x,1):,}".replace(',', '.'))
 
@@ -725,7 +717,6 @@ with tab_pred:
         "Dotación requerida",
         "Dotación histórica",
         "Ajuste dotación",
-        "Gap dotación",
     ]]
     df_daily_display = df_daily_display[df_daily.columns]
 

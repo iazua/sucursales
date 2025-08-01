@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from prophet import Prophet
 from preprocessing import forecast_dotacion_prophet, forecast_target_prophet
-from utils import estimar_parametros_efectividad
+from utils import estimar_parametros_efectividad, estimar_dotacion_optima
 
 MODEL_DIR = "models_prophet"
 PROPHET_DIR = "models_prophet"
@@ -205,26 +205,19 @@ def generate_predictions(
     else:
         params_eff = {"L": 1.0, "k": 0.5, "x0_base": 5.0, "x0_factor_t_ao_venta": 0.05}
 
-    L = params_eff["L"]
-    k = params_eff["k"] if params_eff["k"] > 0 else 0.5
-    x0_base = params_eff["x0_base"]
-    x0_fac = params_eff["x0_factor_t_ao_venta"]
-
     max_dot = float(df_branch["DOTACION"].max()) if "DOTACION" in df_branch.columns else 0
 
-    def _inv_sigmoid(eff: float, t_ao_v: float) -> float:
-        if eff <= 0:
-            return 0.0
-        if eff >= L:
-            return max_dot
-        x0 = x0_base - x0_fac * t_ao_v
-        val = x0 - (1.0 / k) * np.log(L / eff - 1)
-        return max(0.0, val)
+    result["DOTACION_req"] = 0
+    for fecha, grp in result.groupby("FECHA"):
+        dot_opt, _ = estimar_dotacion_optima(
+            grp["T_AO_pred"],
+            grp["T_AO_VENTA_req"],
+            efectividad_obj,
+            params_eff,
+        )
+        dot_final = int(np.minimum(dot_opt, max_dot))
+        result.loc[result["FECHA"] == fecha, "DOTACION_req"] = dot_final
 
-    dot_req = result["T_AO_VENTA_req"].apply(lambda v: _inv_sigmoid(efectividad_obj, v))
-    dot_capped = np.minimum(dot_req, max_dot)
-    result["DOTACION_req"] = dot_capped.round().astype(int)
-    result["DOTACION_gap"] = np.clip(dot_req - max_dot, a_min=0, a_max=None)
 
     return result
 
