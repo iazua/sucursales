@@ -199,16 +199,28 @@ def generate_predictions(
         0,
     )
     # --- Required staffing based on desired effectiveness ---
-    hist_eff = df_branch[["DOTACION", "T_AO", "T_AO_VENTA"]].dropna()
+    hist_eff = df_branch[["FECHA", "DOTACION", "T_AO", "T_AO_VENTA"]].dropna()
     if len(hist_eff) >= 3:
-        params_eff = estimar_parametros_efectividad(hist_eff)
+        params_eff_global = estimar_parametros_efectividad(hist_eff)
     else:
-        params_eff = {"L": 1.0, "k": 0.5, "x0_base": 5.0, "x0_factor_t_ao_venta": 0.05}
+        params_eff_global = {"L": 1.0, "k": 0.5, "x0_base": 5.0, "x0_factor_t_ao_venta": 0.05}
+
+    # Estimar parámetros por día de la semana para capturar variaciones
+    params_by_weekday = {}
+    hist_eff["weekday"] = hist_eff["FECHA"].dt.weekday
+    for wd in range(7):
+        df_wd = hist_eff[hist_eff["weekday"] == wd]
+        if len(df_wd) >= 3:
+            params_by_weekday[wd] = estimar_parametros_efectividad(df_wd)
+        else:
+            params_by_weekday[wd] = params_eff_global
 
     max_dot = float(df_branch["DOTACION"].max()) if "DOTACION" in df_branch.columns else 0
 
     result["DOTACION_req"] = 0
     for fecha, grp in result.groupby("FECHA"):
+        weekday = fecha.weekday()
+        params_eff = params_by_weekday.get(weekday, params_eff_global)
         dot_opt, _ = estimar_dotacion_optima(
             grp["T_AO_pred"],
             grp["T_AO_VENTA_req"],
