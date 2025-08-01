@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from io import BytesIO
 from datetime import timedelta
 from train_models import generate_predictions
 import plotly.express as px
@@ -726,6 +727,16 @@ with tab_pred:
         allow_unsafe_jscode=True,
         use_container_width=True,
         fit_columns_on_grid_load=True,
+    )
+
+    # Botón para descargar la tabla dinámica en Excel
+    buffer = BytesIO()
+    df_grid.to_excel(buffer, index=False)
+    st.download_button(
+        "Descargar tabla en Excel",
+        data=buffer.getvalue(),
+        file_name="prediccion_diaria.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
     # --- RECOMENDACIONES POR DíA Y TURNO ---
