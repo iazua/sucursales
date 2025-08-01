@@ -19,13 +19,15 @@ ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
 PRIMARY_COLOR = "#4F2D7F"  # Minsk
 # Color de fondo para secciones claras y tablas
 PRIMARY_BG = "#F8F1FA"
-# Fondo general claro para el modo light (se usa también para las gráficas)
-# Fondo general claro para el modo light (se usa también para tablas)
-DARK_BG_COLOR = PRIMARY_BG
+# Fondo general claro para el modo light
+DARK_BG_COLOR = "#FFFFFF"  # Light background
 # Fondo transparente para las gráficas
 GRAPH_BG_COLOR = "rgba(0, 0, 0, 0)"
+
 # Fondo de la página con gradiente corporativo
 BG_GRADIENT = f"linear-gradient(135deg, {PRIMARY_COLOR} 0%, {ACCENT_COLOR} 100%)"
+# Color de fondo para secciones claras y tablas
+PRIMARY_BG = "#F8F1FA"
 # Color de las tablas sobre fondo claro
 TABLE_BG_COLOR = "#F8F9FA"
 WHITE = "#FFFFFF"
@@ -677,18 +679,11 @@ with tab_pred:
     avg_formatter = JsCode(
         """
         function(params) {
-            if (params.node.group) {
-                var val = Number(params.value);
-                if (!isFinite(val)) {
-                    return '';
-                }
-                var scaled = val * 100;
-                if (Math.abs(scaled - Math.round(scaled)) > 1e-6) {
-                    return Math.round(val).toLocaleString('es-ES');
-                }
-                return val.toFixed(2);
+            var val = Number(params.value);
+            if (!isFinite(val)) {
+                return '';
             }
-            return Math.round(params.value).toLocaleString('es-ES');
+            return Math.round(val).toLocaleString('es-ES');
         }
         """
     )
