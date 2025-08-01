@@ -628,9 +628,13 @@ with tab_pred:
         "DOTACION_req",
     ]].copy()
 
-    # 2) Formateamos FECHA y añadimos día de la semana
-    df_hourly["Fecha registro"] = df_hourly["FECHA"].dt.strftime("%d-%m-%Y")
+    # 2) Formateamos FECHA, añadimos día de la semana y
+    #     combinamos ambos para la fila de grupo
     df_hourly["Día"] = df_hourly["FECHA"].dt.day_name().map(DAY_NAME_MAP_ES)
+    df_hourly["Fecha registro"] = (
+        df_hourly["FECHA"].dt.strftime("%d-%m-%Y") +
+        " (" + df_hourly["Día"] + ")"
+    )
     df_hourly["weekday"] = df_hourly["FECHA"].dt.dayofweek
 
     # 3) Renombramos cada métrica de forma explícita
@@ -672,9 +676,10 @@ with tab_pred:
         "Dotación requerida", "Dotación histórica", "Ajuste dotación"
     ]]
 
-    st.subheader("Predicción diaria y horaria")
+    # Copia para la tabla dinámica sin repetir el día por cada hora
+    df_grid = df_hourly.drop(columns=["Día"]).copy()
 
-    df_grid = df_hourly.copy()
+    st.subheader("Predicción diaria y horaria")
     gb = GridOptionsBuilder.from_dataframe(df_grid)
     avg_formatter = JsCode(
         """
@@ -688,7 +693,6 @@ with tab_pred:
         """
     )
     gb.configure_column("Fecha registro", header_name="Fecha", rowGroup=True, hide=True)
-    gb.configure_column("Día", header_name="Día de la semana")
     gb.configure_column("Hora", type=["numericColumn"])
     gb.configure_column("Visitas estimadas", type=["numericColumn"], aggFunc="sum",
                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
