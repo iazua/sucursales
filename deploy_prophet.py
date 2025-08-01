@@ -49,11 +49,17 @@ def deploy_forecasts(df: pd.DataFrame, horizon_days: int = 365, changepoint_prio
 
             plt.figure()
             plt.plot(forecast["ds"], forecast["yhat"], label="forecast")
-            plt.fill_between(forecast["ds"], forecast["yhat_lower"], forecast["yhat_upper"], alpha=0.3)
-            plt.title(f"{target} forecast for branch {branch}")
+            plt.fill_between(
+                forecast["ds"],
+                forecast["yhat_lower"],
+                forecast["yhat_upper"],
+                alpha=0.3,
+            )
+            plt.title(f"{target} forecast for branch {branch}", color="white")
             plt.xlabel("date")
             plt.ylabel(target)
             plt.legend()
+            plt.grid(color="dimgray")
             plt.tight_layout()
             plot_name = f"{branch}_{target}_forecast.png"
             plt.savefig(os.path.join(PROPHET_DIR, plot_name))
