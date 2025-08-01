@@ -673,18 +673,11 @@ with tab_pred:
     avg_formatter = JsCode(
         """
         function(params) {
-            if (params.node.group) {
-                var val = Number(params.value);
-                if (!isFinite(val)) {
-                    return '';
-                }
-                var scaled = val * 100;
-                if (Math.abs(scaled - Math.round(scaled)) > 1e-6) {
-                    return Math.round(val).toLocaleString('es-ES');
-                }
-                return val.toFixed(2);
+            var val = Number(params.value);
+            if (!isFinite(val)) {
+                return '';
             }
-            return Math.round(params.value).toLocaleString('es-ES');
+            return Math.round(val).toLocaleString('es-ES');
         }
         """
     )
