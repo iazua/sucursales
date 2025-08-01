@@ -606,9 +606,7 @@ with tab_pred:
 
     df_pred = pred_dict[scenario_selected]
 
-    # ——— TABLA POR HORA ———
-    st.subheader("Por hora")
-
+    # --- TABLAS DINÁMICAS POR DÍA Y HORA ---
     # 1) Seleccionamos únicamente las columnas de df_pred que necesitamos
     df_hourly = df_pred[[
         "FECHA",
@@ -671,8 +669,6 @@ with tab_pred:
     ]]
     df_hourly_display = df_hourly_display[df_hourly.columns]
 
-    st.dataframe(df_hourly_display, use_container_width=True, hide_index=True)
-
     # ——— TABLA POR DÍA ———
     st.subheader("Por día")
 
@@ -726,6 +722,17 @@ with tab_pred:
     df_daily_display = df_daily_display[df_daily.columns]
 
     st.dataframe(df_daily_display, use_container_width=True, hide_index=True)
+
+    dias_disp = df_daily["Fecha registro"].unique().tolist()
+    selected_day = st.selectbox(
+        "Selecciona un día para ver detalle por hora",
+        dias_disp,
+    )
+
+    df_hourly_selected = df_hourly_display[df_hourly_display["Fecha registro"] == selected_day]
+
+    st.subheader(f"Detalle por hora - {selected_day}")
+    st.dataframe(df_hourly_selected, use_container_width=True, hide_index=True)
 
     # --- RECOMENDACIONES POR DíA Y TURNO ---
     df_rec = df_hourly.copy()
