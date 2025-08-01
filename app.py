@@ -16,13 +16,13 @@ from plotly.subplots import make_subplots
 # Paleta oficial Banco
 ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
 
-PRIMARY_COLOR = "#4F2D7F"  # Minsk
+PRIMARY_COLOR = "#422D7F"  # Minsk
 # Color de fondo para secciones claras y tablas
-PRIMARY_BG = "#F8F1FA"
+PRIMARY_BG = "#F5F1FA"
 # Fondo general claro para el modo light
 DARK_BG_COLOR = "#FFFFFF"  # Light background
 # Fondo transparente para las gráficas
-GRAPH_BG_COLOR = "F1AC3B"
+GRAPH_BG_COLOR = "rgba(0, 0, 0, 0)"
 
 # Fondo de la página con gradiente corporativo
 BG_GRADIENT = f"linear-gradient(135deg, {PRIMARY_COLOR} 0%, {ACCENT_COLOR} 100%)"
