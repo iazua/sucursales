@@ -723,6 +723,40 @@ with tab_pred:
 
     st.dataframe(df_daily_display, use_container_width=True, hide_index=True)
 
+    # --- RECOMENDACIONES POR DíA Y TURNO ---
+    df_rec = df_hourly.copy()
+    df_rec["HORA"] = df_rec["Hora"]
+    df_rec = assign_turno(df_rec)
+    resumen = (
+        df_rec
+        .groupby(["Día", "turno"], as_index=False)["Ajuste dotación"]
+        .mean()
+    )
+    labels_turno = {0: "Fuera rango", 1: "9–11", 2: "12–14", 3: "15–17", 4: "18–21"}
+    resumen["Turno"] = resumen["turno"].map(labels_turno)
+
+    def _accion(x: float) -> str:
+        if x > 0.5:
+            return "Reforzar personal"
+        elif x < -0.5:
+            return "Mover personal"
+        else:
+            return "Mantener dotación"
+
+    resumen["Ajuste prom"] = resumen["Ajuste dotación"].round(1)
+    resumen["Acción"] = resumen["Ajuste dotación"].apply(_accion)
+    resumen_display = resumen[["Día", "Turno", "Ajuste prom", "Acción"]]
+    st.subheader("Recomendaciones por día y turno")
+    st.dataframe(resumen_display, use_container_width=True, hide_index=True)
+    st.markdown(
+        """
+        **Cómo interpretar la tabla**
+        - **Ajuste prom**: diferencia promedio entre la dotación requerida y la histórica.
+        - **Acción**: sugerencia para mover o reforzar personal según el ajuste.
+        Valores positivos indican necesidad de más personal; negativos, exceso que puede reasignarse.
+        """
+    )
+
     # --- CURVA DE EFECTIVIDAD vs. DOTACIÓN (Teórica) ---
     st.subheader("Curva de Efectividad vs. Dotación")
 
