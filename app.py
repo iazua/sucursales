@@ -506,6 +506,15 @@ with tab_pred:
     df_suc = df[df["COD_SUC"] == cod_suc].copy()
     df_suc = df_suc.sort_values(["FECHA", "HORA"] if "HORA" in df_suc.columns else ["FECHA"]).reset_index(drop=True)
 
+    # --- Dotación promedio histórica por día de la semana y hora ---
+    if "HORA" in df_suc.columns:
+        df_suc["weekday"] = df_suc["FECHA"].dt.dayofweek
+        avg_dot_map = (
+            df_suc.groupby(["weekday", "HORA"])["DOTACION"].mean().to_dict()
+        )
+    else:
+        avg_dot_map = {}
+
     # Asegurar P_EFECTIVIDAD histórica
     if "P_EFECTIVIDAD" not in df_suc.columns:
         df_suc["P_EFECTIVIDAD"] = calcular_efectividad(df_suc["T_AO"], df_suc["T_AO_VENTA"])
@@ -610,6 +619,7 @@ with tab_pred:
     # 2) Formateamos FECHA y añadimos día de la semana
     df_hourly["Fecha registro"] = df_hourly["FECHA"].dt.strftime("%d-%m-%Y")
     df_hourly["Día"] = df_hourly["FECHA"].dt.day_name().map(DAY_NAME_MAP_ES)
+    df_hourly["weekday"] = df_hourly["FECHA"].dt.dayofweek
 
     # 3) Renombramos cada métrica de forma explícita
     df_hourly = df_hourly.rename(columns={
@@ -630,6 +640,14 @@ with tab_pred:
     df_hourly["Dotación requerida"] = df_hourly["Dotación requerida"].round(0).astype(int)
     df_hourly["Gap dotación"] = df_hourly["Gap dotación"].round(1)
 
+    # 4.b) Dotación histórica y ajuste necesario
+    def _avg_hist(row):
+        key = (row["weekday"], row["Hora"])
+        return round(avg_dot_map.get(key, np.nan), 1)
+
+    df_hourly["Dotación histórica"] = df_hourly.apply(_avg_hist, axis=1)
+    df_hourly["Ajuste dotación"] = (df_hourly["Dotación requerida"] - df_hourly["Dotación histórica"]).round(1)
+
     # Preparamos una copia solo para mostrar, aplicando formato de miles
     df_hourly_display = df_hourly.copy()
     for col in [
@@ -637,6 +655,8 @@ with tab_pred:
         "Ofertas aceptadas estimadas",
         "Ventas requeridas",
         "Dotación requerida",
+        "Dotación histórica",
+        "Ajuste dotación",
         "Gap dotación",
     ]:
         df_hourly_display[col] = df_hourly_display[col].apply(lambda x: f"{x:,}".replace(',', '.'))
@@ -646,7 +666,8 @@ with tab_pred:
         "Fecha registro", "Día", "Hora",
         "Visitas estimadas", "Ofertas aceptadas estimadas",
         "Ventas requeridas", "% Efectividad requerida",
-        "Dotación requerida", "Gap dotación"
+        "Dotación requerida", "Dotación histórica", "Ajuste dotación",
+        "Gap dotación"
     ]]
     df_hourly_display = df_hourly_display[df_hourly.columns]
 
@@ -664,6 +685,8 @@ with tab_pred:
             "Ventas requeridas": "sum",
             "% Efectividad requerida": "mean",
             "Dotación requerida": "mean",
+            "Dotación histórica": "mean",
+            "Ajuste dotación": "mean",
             "Gap dotación": "mean",
         })
     )
@@ -671,6 +694,8 @@ with tab_pred:
     # Redondeo final de efectividad
     df_daily["% Efectividad requerida"] = df_daily["% Efectividad requerida"].round(2)
     df_daily["Dotación requerida"] = df_daily["Dotación requerida"].round(1)
+    df_daily["Dotación histórica"] = df_daily["Dotación histórica"].round(1)
+    df_daily["Ajuste dotación"] = df_daily["Ajuste dotación"].round(1)
     df_daily["Gap dotación"] = df_daily["Gap dotación"].round(1)
 
     # Orden cronológico
@@ -684,6 +709,8 @@ with tab_pred:
         "Ofertas aceptadas estimadas",
         "Ventas requeridas",
         "Dotación requerida",
+        "Dotación histórica",
+        "Ajuste dotación",
         "Gap dotación",
     ]:
         df_daily_display[col] = df_daily_display[col].apply(lambda x: f"{round(x,1):,}".replace(',', '.'))
@@ -696,6 +723,8 @@ with tab_pred:
         "Ventas requeridas",
         "% Efectividad requerida",
         "Dotación requerida",
+        "Dotación histórica",
+        "Ajuste dotación",
         "Gap dotación",
     ]]
     df_daily_display = df_daily_display[df_daily.columns]
