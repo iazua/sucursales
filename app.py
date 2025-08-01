@@ -8,7 +8,7 @@ from preprocessing import assign_turno
 from utils import calcular_efectividad, estimar_dotacion_optima, estimar_parametros_efectividad
 import pydeck as pdk
 import plotly.graph_objects as go
-from st_aggrid import AgGrid, GridOptionsBuilder
+from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
 from plotly.subplots import make_subplots
 
@@ -670,6 +670,24 @@ with tab_pred:
 
     df_grid = df_hourly.copy()
     gb = GridOptionsBuilder.from_dataframe(df_grid)
+    avg_formatter = JsCode(
+        """
+        function(params) {
+            if (params.node.group) {
+                var val = Number(params.value);
+                if (!isFinite(val)) {
+                    return '';
+                }
+                var scaled = val * 100;
+                if (Math.abs(scaled - Math.round(scaled)) > 1e-6) {
+                    return Math.round(val).toLocaleString('es-ES');
+                }
+                return val.toFixed(2);
+            }
+            return Math.round(params.value).toLocaleString('es-ES');
+        }
+        """
+    )
     gb.configure_column("Fecha registro", header_name="Fecha", rowGroup=True, hide=True)
     gb.configure_column("Día", hide=True)
     gb.configure_column("Hora", type=["numericColumn"])
@@ -687,19 +705,13 @@ with tab_pred:
         "Dotación histórica",
         type=["numericColumn"],
         aggFunc="avg",
-        valueFormatter=(
-            "params.node.group ? Number(params.value).toFixed(2) : "
-            "Math.round(params.value).toLocaleString('es-ES')"
-        ),
+        valueFormatter=avg_formatter,
     )
     gb.configure_column(
         "Ajuste dotación",
         type=["numericColumn"],
         aggFunc="avg",
-        valueFormatter=(
-            "params.node.group ? Number(params.value).toFixed(2) : "
-            "Math.round(params.value).toLocaleString('es-ES')"
-        ),
+        valueFormatter=avg_formatter,
     )
     gb.configure_grid_options(groupDefaultExpanded=0)
     grid_options = gb.build()
