@@ -664,7 +664,7 @@ with tab_pred:
     ).round(0).astype("Int64")
 
 
-    # 5) Seleccionamos el orden final de columnas base
+    # 5) Seleccionamos el orden final de columnas
     df_hourly = df_hourly[[
         "Fecha registro", "Día", "Hora",
         "Visitas estimadas", "Ofertas aceptadas estimadas",
@@ -674,44 +674,7 @@ with tab_pred:
 
     st.subheader("Predicción diaria y horaria")
 
-    # Permitir elegir la frecuencia de visualización
-    freq_option = st.radio(
-        "Frecuencia",
-        ["Horario", "Diario"],
-        index=0,
-        horizontal=True,
-    )
-
-    if freq_option == "Diario":
-        df_grid = (
-            df_hourly
-            .groupby(["Fecha registro", "Día"], as_index=False)
-            .agg({
-                "Visitas estimadas": "sum",
-                "Ofertas aceptadas estimadas": "sum",
-                "Ventas requeridas": "sum",
-                "% Efectividad requerida": "mean",
-                "Dotación requerida": "mean",
-                "Dotación histórica": "mean",
-                "Ajuste dotación": "mean",
-            })
-        )
-        columns_order = [
-            "Fecha registro", "Día",
-            "Visitas estimadas", "Ofertas aceptadas estimadas",
-            "Ventas requeridas", "% Efectividad requerida",
-            "Dotación requerida", "Dotación histórica", "Ajuste dotación",
-        ]
-    else:
-        df_grid = df_hourly.copy()
-        columns_order = [
-            "Fecha registro", "Día", "Hora",
-            "Visitas estimadas", "Ofertas aceptadas estimadas",
-            "Ventas requeridas", "% Efectividad requerida",
-            "Dotación requerida", "Dotación histórica", "Ajuste dotación",
-        ]
-
-    df_grid = df_grid[columns_order]
+    df_grid = df_hourly.copy()
     gb = GridOptionsBuilder.from_dataframe(df_grid)
     avg_formatter = JsCode(
         """
@@ -725,9 +688,8 @@ with tab_pred:
         """
     )
     gb.configure_column("Fecha registro", header_name="Fecha", rowGroup=True, hide=True)
-    gb.configure_column("Día", header_name="Día de la semana", hide=freq_option == "Horario")
-    if freq_option == "Horario":
-        gb.configure_column("Hora", type=["numericColumn"])
+    gb.configure_column("Día", header_name="Día de la semana")
+    gb.configure_column("Hora", type=["numericColumn"])
     gb.configure_column("Visitas estimadas", type=["numericColumn"], aggFunc="sum",
                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_column("Ofertas aceptadas estimadas", type=["numericColumn"], aggFunc="sum",
