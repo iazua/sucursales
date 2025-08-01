@@ -59,9 +59,8 @@ se basan en los promedios históricos de 2024.
 El módulo `generate_predictions` ahora permite añadir ruido gaussiano opcional
 (parámetro `noise_scale`) para simular la volatilidad observada en la data real.
 Además, la dotación requerida se calcula optimizando cada día por separado,
-y los parámetros de la curva de efectividad se ajustan según el día de la
-semana. Así, las jornadas con menor actividad no asignan personal de forma
-excesiva y se respeta la estacionalidad semanal.
+de modo que las jornadas con menor actividad no asignen personal de forma
+excesiva.
 
 ## Ejecución de la aplicación
 
