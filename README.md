@@ -76,6 +76,9 @@ correspondientes. Para publicar la app en línea puedes usar servicios como
 **Streamlit Community Cloud** o cualquier plataforma que ejecute aplicaciones
 Python (Heroku, GCP, AWS, etc.).
 
+- Sobre la tabla de predicciones podrás descargar los resultados en formato
+  Excel mediante el botón **"Descargar tabla en Excel"**.
+
 
 
 
