@@ -104,12 +104,6 @@ st.markdown(
     .stPlotlyChart div {{
       background: var(--bg-gradient) !important;
     }}
-    /* Pequeño marco blanco alrededor de gráficas y tablas */
-    .stPlotlyChart div, .stDataFrame, .stTable, .stDeckGlJson, .ag-theme-streamlit {{
-      border: 2px solid var(--white);
-      border-radius: 4px;
-      padding: 0.25rem;
-    }}
     /* Botones primarios */
     .stButton>button {{
       background-color: var(--primary);
@@ -171,9 +165,7 @@ st.markdown(
     /* Tablas incrustadas en el fondo */
     .stDataFrame, .stTable {{
       background-color: var(--table-bg) !important;
-      border: 2px solid var(--white);
-      border-radius: 4px;
-      padding: 0.25rem;
+      border: none;
     }}
     /* Ajustes extra para DataFrame en la pestaña Forecast */
     div[data-testid="stDataFrame"] > div {{
