@@ -740,9 +740,24 @@ with tab_pred:
 
     resumen["Ajuste prom"] = resumen["Ajuste dotación"].round(1)
     resumen["Acción"] = resumen["Ajuste dotación"].apply(_accion)
-    resumen_display = resumen[["Día", "Turno", "Ajuste prom", "Acción"]]
+    resumen_display = (
+        resumen[["Día", "Turno", "Ajuste prom", "Acción"]]
+        .sort_values("Ajuste prom", ascending=False)
+    )
+
+    def _color_ajuste(val: float) -> str:
+        if val > 0:
+            return "background-color:#d4f8d4; color:#1e4620"  # light green
+        if val < 0:
+            return "background-color:#ffe2e2; color:#611a15"  # light red
+        return ""
+
     st.subheader("Recomendaciones por día y turno")
-    st.dataframe(resumen_display, use_container_width=True, hide_index=True)
+    st.dataframe(
+        resumen_display.style.applymap(_color_ajuste, subset=["Ajuste prom"]),
+        use_container_width=True,
+        hide_index=True,
+    )
     st.markdown(
         """
         **Cómo interpretar la tabla**
