@@ -22,7 +22,7 @@ PRIMARY_BG = "#F8F1FA"
 # Fondo general claro para el modo light
 DARK_BG_COLOR = "#FFFFFF"  # Light background
 # Fondo transparente para las gráficas
-GRAPH_BG_COLOR = "rgba(0, 0, 0, 0)"
+GRAPH_BG_COLOR = "F1AC3B"
 
 # Fondo de la página con gradiente corporativo
 BG_GRADIENT = f"linear-gradient(135deg, {PRIMARY_COLOR} 0%, {ACCENT_COLOR} 100%)"
