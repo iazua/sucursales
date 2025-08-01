@@ -86,7 +86,7 @@ st.markdown(
     }}
     /* DataFrame: fondo de la tabla y de las celdas */
     .stDataFrame div[role="table"] {{
-      background-color: var(--table-bg) !important;
+      background: var(--bg-gradient) !important;
       color: var(--black);
     }}
     /* Para los encabezados de tabla */
@@ -158,15 +158,15 @@ st.markdown(
     }}
     /* Tablas incrustadas en el fondo */
     .stDataFrame, .stTable {{
-      background-color: var(--table-bg) !important;
+      background: var(--bg-gradient) !important;
       border: none;
     }}
     /* Ajustes extra para DataFrame en la pestaña Forecast */
     div[data-testid="stDataFrame"] > div {{
-      background-color: var(--table-bg) !important;
+      background: var(--bg-gradient) !important;
     }}
     div[data-testid="stDataFrame"] table {{
-      background-color: var(--table-bg) !important;
+      background: var(--bg-gradient) !important;
       color: var(--black) !important;
     }}
     div[data-testid="stDataFrame"] th {{
@@ -174,7 +174,7 @@ st.markdown(
       color: var(--white) !important;
     }}
     .stTable table {{
-      background-color: var(--table-bg) !important;
+      background: var(--bg-gradient) !important;
       color: var(--black);
     }}
     .stTable th {{
