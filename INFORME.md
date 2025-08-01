@@ -98,7 +98,8 @@ Estos cálculos permiten estimar cuánta dotación se requiere para alcanzar una
 1. **Modelos de series de tiempo robustos**. Los pronósticos se generan con Prophet, que captura estacionalidades diarias, semanales y anuales. Además, se consideran feriados de Chile para mejorar la precisión.
 2. **Vectorización y aprovechamiento del historial**. El `README` destaca que la app utiliza un método vectorizado para acelerar la inferencia en horizontes extensos y que las proyecciones se basan en los promedios de 2024 cuando no hay datos suficientes.
 3. **Ajuste mediante ruido gaussiano**. Para reflejar mejor la volatilidad real, `generate_predictions` permite incorporar ruido gaussiano controlado por el usuario.
-4. **Modelado de efectividad**. El empleo de una función sigmoide parametrizada permite estimar la relación entre dotación y ventas concretadas, ofreciendo una visión directa del impacto de aumentar o reducir personal.
+4. **Parámetros por día de la semana**. Los coeficientes de la curva de efectividad se recalculan según el día, de modo que la dotación requerida refleje la estacionalidad semanal.
+5. **Modelado de efectividad**. El empleo de una función sigmoide parametrizada permite estimar la relación entre dotación y ventas concretadas, ofreciendo una visión directa del impacto de aumentar o reducir personal.
 
 ## 5. Beneficios de un buen uso de la herramienta
 
