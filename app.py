@@ -711,7 +711,7 @@ with tab_pred:
     gb.configure_column(
         "Dotación requerida",
         type=["numericColumn"],
-        aggFunc="avg",
+        aggFunc="max",
         valueFormatter="Math.floor(params.value).toLocaleString('es-ES')",
     )
     gb.configure_column(
