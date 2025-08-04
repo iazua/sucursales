@@ -10,8 +10,6 @@ from utils import calcular_efectividad, estimar_dotacion_optima, estimar_paramet
 import pydeck as pdk
 import plotly.graph_objects as go
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
-import requests
-from PIL import Image
 
 from plotly.subplots import make_subplots
 
@@ -216,12 +214,10 @@ st.markdown(
 
 col1, col2, col3 = st.columns([1, 1, 1])
 with col2:
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/2/27/Logo_Ripley_banco_2.png"
-    response = requests.get(image_url)
-    image = Image.open(BytesIO(response.content))
-    width, height = image.size
-    left_half = image.crop((0, 0, width // 2, height))
-    st.image(left_half, use_container_width=True)
+    st.image(
+        "https://upload.wikimedia.org/wikipedia/commons/2/27/Logo_Ripley_banco_2.png",
+        use_container_width=True
+    )
 
 
 # --- CARGA DE DATOS ---
