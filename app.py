@@ -710,6 +710,17 @@ with tab_pred:
         }
         """
     )
+    two_dec_formatter = JsCode(
+        """
+        function(params) {
+            var val = Number(params.value);
+            if (!isFinite(val)) {
+                return '';
+            }
+            return val.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+        """
+    )
     dia_renderer = JsCode(
         """
         function(params) {
@@ -728,9 +739,9 @@ with tab_pred:
     gb.configure_column("Ventas requeridas", type=["numericColumn"], aggFunc="sum",
                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_column("% Efectividad requerida", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter="params.value.toFixed(2)")
+                       valueFormatter=two_dec_formatter)
     gb.configure_column("% Efectividad 2024", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter="params.value.toFixed(2)")
+                       valueFormatter=two_dec_formatter)
     gb.configure_column(
         "Dotación requerida",
         type=["numericColumn"],
