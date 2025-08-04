@@ -663,13 +663,34 @@ with tab_pred:
     df_hourly["Ajuste dotación"] = (
         df_hourly["Dotación requerida"] - df_hourly["Dotación histórica"]
     ).round(0).astype("Int64")
+    # 4.c) Efectividad lograda en 2024 para la misma fecha y hora
+    df_2024 = df_suc[df_suc['FECHA'].dt.year == 2024].copy()
+    if 'P_EFECTIVIDAD' not in df_2024.columns:
+        df_2024['P_EFECTIVIDAD'] = calcular_efectividad(df_2024['T_AO'], df_2024['T_AO_VENTA'])
+
+    eff_map_2024 = (
+        df_2024
+        .assign(Fecha=df_2024['FECHA'].dt.date)
+        .set_index(['Fecha', 'HORA'])['P_EFECTIVIDAD']
+        .to_dict()
+    )
+
+    def _eff_2024(row):
+        fecha_2024 = row['FECHA'].replace(year=2024).date()
+        key = (fecha_2024, row['Hora'])
+        return eff_map_2024.get(key, np.nan)
+
+    df_hourly['% Efectividad 2024'] = (
+        df_hourly.apply(_eff_2024, axis=1)
+    ).round(2)
+
 
 
     # 5) Seleccionamos el orden final de columnas
     df_hourly = df_hourly[[
         "Fecha registro", "Día", "Hora",
         "Visitas estimadas", "Ofertas aceptadas estimadas",
-        "Ventas requeridas", "% Efectividad requerida",
+        "Ventas requeridas", "% Efectividad requerida", "% Efectividad 2024",
         "Dotación requerida", "Dotación histórica", "Ajuste dotación"
     ]]
 
@@ -707,6 +728,8 @@ with tab_pred:
     gb.configure_column("Ventas requeridas", type=["numericColumn"], aggFunc="sum",
                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_column("% Efectividad requerida", type=["numericColumn"], aggFunc="avg",
+                       valueFormatter="params.value.toFixed(2)")
+    gb.configure_column("% Efectividad 2024", type=["numericColumn"], aggFunc="avg",
                        valueFormatter="params.value.toFixed(2)")
     gb.configure_column(
         "Dotación requerida",
