@@ -522,14 +522,13 @@ with tab_pred:
     df_suc = df[df["COD_SUC"] == cod_suc].copy()
     df_suc = df_suc.sort_values(["FECHA", "HORA"] if "HORA" in df_suc.columns else ["FECHA"]).reset_index(drop=True)
 
-    # --- Dotación promedio histórica por día de la semana y hora ---
+    # --- Dotación histórica por fecha y hora ---
     if "HORA" in df_suc.columns:
-        df_suc["weekday"] = df_suc["FECHA"].dt.dayofweek
-        avg_dot_map = (
-            df_suc.groupby(["weekday", "HORA"])["DOTACION"].mean().to_dict()
+        hist_dot_map = (
+            df_suc.set_index(["FECHA", "HORA"])["DOTACION"].to_dict()
         )
     else:
-        avg_dot_map = {}
+        hist_dot_map = df_suc.set_index("FECHA")["DOTACION"].to_dict()
 
     # Asegurar P_EFECTIVIDAD histórica
     if "P_EFECTIVIDAD" not in df_suc.columns:
@@ -632,7 +631,6 @@ with tab_pred:
     # 2) Formateamos FECHA y añadimos el nombre del día en columna aparte
     df_hourly["Día"] = df_hourly["FECHA"].dt.day_name().map(DAY_NAME_MAP_ES)
     df_hourly["Fecha registro"] = df_hourly["FECHA"].dt.strftime("%d-%m-%Y")
-    df_hourly["weekday"] = df_hourly["FECHA"].dt.dayofweek
 
     # 3) Renombramos cada métrica de forma explícita
     df_hourly = df_hourly.rename(columns={
@@ -652,13 +650,13 @@ with tab_pred:
     df_hourly["Dotación requerida"] = df_hourly["Dotación requerida"].round(0).astype(int)
 
     # 4.b) Dotación histórica y ajuste necesario
-    def _avg_hist(row):
-        key = (row["weekday"], row["Hora"])
-        val = avg_dot_map.get(key, np.nan)
+    def _hist_dot(row):
+        key = (row["FECHA"], row["Hora"]) if "HORA" in df_suc.columns else row["FECHA"]
+        val = hist_dot_map.get(key, np.nan)
         return int(round(val)) if not pd.isna(val) else np.nan
 
     df_hourly["Dotación histórica"] = (
-        df_hourly.apply(_avg_hist, axis=1)
+        df_hourly.apply(_hist_dot, axis=1)
     ).round(0).astype("Int64")
     df_hourly["Ajuste dotación"] = (
         df_hourly["Dotación requerida"] - df_hourly["Dotación histórica"]
@@ -740,7 +738,7 @@ with tab_pred:
     gb.configure_column(
         "Dotación histórica",
         type=["numericColumn"],
-        aggFunc="avg",
+        aggFunc="max",
         valueFormatter=avg_formatter,
     )
     gb.configure_column(
