@@ -708,8 +708,12 @@ with tab_pred:
                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_column("% Efectividad requerida", type=["numericColumn"], aggFunc="avg",
                        valueFormatter="params.value.toFixed(2)")
-    gb.configure_column("Dotación requerida", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
+    gb.configure_column(
+        "Dotación requerida",
+        type=["numericColumn"],
+        aggFunc="avg",
+        valueFormatter="Math.floor(params.value).toLocaleString('es-ES')",
+    )
     gb.configure_column(
         "Dotación histórica",
         type=["numericColumn"],
