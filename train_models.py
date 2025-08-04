@@ -222,6 +222,9 @@ def generate_predictions(
         dot_final = int(np.minimum(dot_opt, max_dot))
         result.loc[result["FECHA"] == fecha, "DOTACION_req"] = dot_final
 
+    # Asegurar que la dotación requerida por hora no supere las
+    # ofertas aceptadas esperadas para esa hora
+    result["DOTACION_req"] = np.minimum(result["DOTACION_req"], result["T_AO_pred"])
 
     return result
 
