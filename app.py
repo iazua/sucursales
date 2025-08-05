@@ -22,15 +22,15 @@ PRIMARY_COLOR = "#422D7F"  # Minsk
 PRIMARY_BG = "#F5F1FA"
 # Fondo general claro para el modo light
 DARK_BG_COLOR = "#FFFFFF"  # Light background
-# Fondo azul para tablas y gráficas
-GRAPH_BG_COLOR = "#E6F0FF"  # Blue-ish background
+# Fondo transparente para las gráficas
+GRAPH_BG_COLOR = "rgba(0, 0, 0, 0)"
 
 # Fondo de la página con gradiente corporativo
 BG_GRADIENT = f"linear-gradient(135deg, {PRIMARY_COLOR} 0%, {ACCENT_COLOR} 100%)"
 # Color de fondo para secciones claras y tablas
 PRIMARY_BG = "#F8F1FA"
 # Color de las tablas sobre fondo claro
-TABLE_BG_COLOR = GRAPH_BG_COLOR
+TABLE_BG_COLOR = "#F8F9FA"
 WHITE = "#FFFFFF"
 BLACK = "#000000"
 GRID_COLOR = "#333333"  # Dark grid lines
@@ -103,7 +103,7 @@ st.markdown(
     }}
     /* Para las gráficas, el contenedor externo */
     .stPlotlyChart div {{
-      background-color: var(--graph-bg) !important;
+      background: var(--bg-gradient) !important;
     }}
     /* Botones primarios */
     .stButton>button {{
