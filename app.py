@@ -19,7 +19,6 @@ ACCENT_COLOR = "#F1AC4B"   # Sandy Brown (Histórico)
 PRIMARY_COLOR = "#422D7F"  # Fondo púrpura corporativo
 LIGHT_PURPLE = "#8F7BC1"   # Púrpura claro para líneas/barras sobre fondo púrpura
 MEDIUM_PURPLE = "#6E54A3"  # Púrpura medio para categorías diferenciadas
-COMPLEMENT_GREEN = "#6FBF73"  # Verde suave armónico
 
 # Fondos
 PRIMARY_BG = PRIMARY_COLOR
@@ -1309,30 +1308,22 @@ with tab_turno:
         4: '18–21'
     })
 
-    COLOR_SEQUENCE_TURNOS = [
-    ACCENT_COLOR,      # 9–11
-    LIGHT_PURPLE,      # 12–14
-    MEDIUM_PURPLE,     # 15–17
-    COMPLEMENT_GREEN   # 18–21
-]
     # — Gráfico: solo T_VISITAS y T_AO, con renombrado de etiquetas —
     metrics_graph = ['T_VISITAS', 'T_AO']
     fig = px.bar(
-    df_dia_turno,
-    x='DíaSemana',
-    y='Efectividad',
-    color='Turno',
-    barmode='group',
-    color_discrete_sequence=COLOR_SEQUENCE_TURNOS,  # <- aquí los 4 colores nuevos
-    category_orders={'DíaSemana': orden_dias, 'Turno': orden_turnos},
-    labels={
-        'DíaSemana': 'Día de la semana',
-        'Efectividad': 'Efectividad promedio',
-        'Turno': 'Franja horaria'
-    },
-    title=f'Efectividad promedio por día de la semana y por turno ({rango_seleccionado})'
-)
-
+        res_turno,
+        x='Turno',
+        y=metrics_graph,
+        barmode='group',
+        color_discrete_sequence=COLOR_SEQUENCE,
+        labels={
+            'T_VISITAS': 'Visitas',
+            'T_AO': 'Acepta Oferta',
+            'value': 'Promedio',
+            'variable': 'Métrica'
+        },
+        title=f"Visitas y Acepta Oferta promedio por franja horaria ({rango_seleccionado})"
+    )
     fig.update_layout(
         plot_bgcolor=GRAPH_BG_COLOR,
         paper_bgcolor=GRAPH_BG_COLOR,
