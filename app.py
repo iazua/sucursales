@@ -1284,56 +1284,56 @@ with tab_turno:
     # Filtrar df_suc según el rango seleccionado
     df_suc_filtrado = filtrar_por_rango(df_suc.copy(), dias_analisis)
 
-    # ——— Análisis por turno ———
+  # ——— Efectividad promedio por día de la semana y turno ———
     st.markdown("---")
-    st.subheader("📊 Visitas y Acepta Oferta promedio por turno")
+    st.subheader("📊 Efectividad promedio por día de la semana y por turno")
 
-    # Generamos la columna 'turno' a partir de df_suc_filtrado
-    df_turnos = assign_turno(df_suc_filtrado.copy())
+    # 1) Preparamos día de la semana y mapeo de turnos
+    dias_map = {
+        'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
+        'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
+    }
+    df_turnos['DíaSemana'] = df_turnos['FECHA'].dt.day_name().map(dias_map)
+    turno_map = {1: '9–11', 2: '12–14', 3: '15–17', 4: '18–21', 0: 'Fuera rango'}
+    df_turnos['Turno'] = df_turnos['turno'].map(turno_map)
 
-    # Métricas originales (para la tabla)
-    metrics = ['T_VISITAS', 'T_AO', 'DOTACION', 'P_EFECTIVIDAD']
-
-    # Agrupamos y calculamos medias
-    res_turno = (
+    # 2) Calculamos el promedio
+    df_dia_turno = (
         df_turnos
-        .groupby('turno')[metrics]
+        .groupby(['DíaSemana', 'Turno'], observed=True)['P_EFECTIVIDAD']
         .mean()
         .reset_index()
+        .rename(columns={'P_EFECTIVIDAD': 'Efectividad'})
     )
-    res_turno['Turno'] = res_turno['turno'].map({
-        0: 'Fuera rango',
-        1: '9–11',
-        2: '12–14',
-        3: '15–17',
-        4: '18–21'
-    })
 
-    COLOR_SEQUENCE_TURNOS = [
-    ACCENT_COLOR,      # 9–11
-    LIGHT_PURPLE,      # 12–14
-    MEDIUM_PURPLE,     # 15–17
-    COMPLEMENT_GREEN   # 18–21
-]
-    # — Gráfico: solo T_VISITAS y T_AO, con renombrado de etiquetas —
-    metrics_graph = ['T_VISITAS', 'T_AO']
+    # 3) Orden de días y turnos
+    orden_dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    orden_turnos = ['9–11', '12–14', '15–17', '18–21']
+
+    df_dia_turno['DíaSemana'] = pd.Categorical(df_dia_turno['DíaSemana'], categories=orden_dias, ordered=True)
+    df_dia_turno['Turno'] = pd.Categorical(df_dia_turno['Turno'], categories=orden_turnos, ordered=True)
+
+    # 4) Redondeo
+    df_dia_turno['Efectividad'] = df_dia_turno['Efectividad'].round(2)
+
+    # 5) Plot
     fig = px.bar(
-    df_dia_turno,
-    x='DíaSemana',
-    y='Efectividad',
-    color='Turno',
-    barmode='group',
-    color_discrete_sequence=COLOR_SEQUENCE_TURNOS,  # <- aquí los 4 colores nuevos
-    category_orders={'DíaSemana': orden_dias, 'Turno': orden_turnos},
-    labels={
-        'DíaSemana': 'Día de la semana',
-        'Efectividad': 'Efectividad promedio',
-        'Turno': 'Franja horaria'
-    },
-    title=f'Efectividad promedio por día de la semana y por turno ({rango_seleccionado})'
-)
-
+        df_dia_turno,
+        x='DíaSemana',
+        y='Efectividad',
+        color='Turno',
+        barmode='group',
+        color_discrete_sequence=COLOR_SEQUENCE,
+        category_orders={'DíaSemana': orden_dias, 'Turno': orden_turnos},
+        labels={
+            'DíaSemana': 'Día de la semana',
+            'Efectividad': 'Efectividad promedio',
+            'Turno': 'Franja horaria'
+        },
+        title=f'Efectividad promedio por día de la semana y por turno ({rango_seleccionado})'
+    )
     fig.update_layout(
+        yaxis_tickformat='.2f',
         plot_bgcolor=GRAPH_BG_COLOR,
         paper_bgcolor=GRAPH_BG_COLOR,
         font_color=BLACK,
@@ -1343,7 +1343,6 @@ with tab_turno:
     fig.update_xaxes(gridcolor=GRID_COLOR)
     fig.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig, use_container_width=True, theme=None)
-
     # ——— KPI de conversión visitas → ofertas aceptadas por turno ———
     st.markdown("---")
     st.subheader("📈 Conversión de visitas a ofertas aceptadas por turno")
