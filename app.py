@@ -14,40 +14,37 @@ from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 from plotly.subplots import make_subplots
 
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# Paleta oficial Banco - versión con fondos planos púrpura
+# Paleta oficial Banco - versión con fondos púrpura y líneas visibles
 
 ACCENT_COLOR = "#F1AC4B"   # Sandy Brown
-PRIMARY_COLOR = "#422D7F"  # Minsk (corporate purple)
+PRIMARY_COLOR = "#422D7F"  # Corporate Purple (backgrounds)
 
-# Fondo general púrpura para tablas y gráficos
-PRIMARY_BG = PRIMARY_COLOR       # Purple for light sections/tables
-TABLE_BG_COLOR = PRIMARY_COLOR   # Purple background for tables
-GRAPH_BG_COLOR = PRIMARY_COLOR   # Purple background for plots
+# Lighter purple for grid/axes lines
+LIGHT_PURPLE = "#8F7BC1"   # Softer purple for contrast
 
-# Fondos claros si los necesitas en otras secciones
-DARK_BG_COLOR = "#FFFFFF"  # Light background (white)
+# Backgrounds
+PRIMARY_BG = PRIMARY_COLOR       # Purple background for sections/tables
+TABLE_BG_COLOR = PRIMARY_COLOR   # Purple tables
+GRAPH_BG_COLOR = PRIMARY_COLOR   # Purple plots
+BG_GRADIENT = PRIMARY_COLOR      # Flat purple instead of gradient
+DARK_BG_COLOR = "#FFFFFF"        # White (light mode alt)
 WHITE = "#FFFFFF"
 BLACK = "#000000"
 
-# El gradiente se elimina y se reemplaza por púrpura plano
-BG_GRADIENT = PRIMARY_COLOR
+# Grid & line colors
+GRID_COLOR = LIGHT_PURPLE
 
-# Grid lines & colors
-GRID_COLOR = "#333333"  # Dark grid lines
+# RGBA versions
+ACCENT_RGBA = "[241, 172, 75, 160]"
+PRIMARY_RGBA = "[66, 45, 127, 255]"
+LIGHT_PURPLE_RGBA = "[143, 123, 193, 255]"
 
-# RGBA versions if needed
-ACCENT_RGBA = "[241, 172, 75, 160]"  # Sandy Brown with opacity
-PRIMARY_RGBA = "[66, 45, 127, 255]"  # Minsk purple RGBA
-
-# Color mapping for historical and prediction series
+# Color mapping
 COLOR_DISCRETE_MAP = {
     "Histórico": ACCENT_COLOR,
     "Escenario base": PRIMARY_BG,
     "Escenario alterno": "#FF4B4B",
 }
-
-# Colors for dual-category series
 COLOR_SEQUENCE = [ACCENT_COLOR, PRIMARY_BG]
 PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
 
