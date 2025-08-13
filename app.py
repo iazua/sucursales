@@ -13,41 +13,47 @@ from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
 from plotly.subplots import make_subplots
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# Paleta oficial Banco - versión con fondos púrpura y líneas visibles
+# Paleta oficial Banco - versión contrastada
 
-ACCENT_COLOR = "#F1AC4B"   # Sandy Brown
-PRIMARY_COLOR = "#422D7F"  # Corporate Purple (backgrounds)
+ACCENT_COLOR = "#F1AC4B"   # Sandy Brown (Histórico)
+PRIMARY_COLOR = "#422D7F"  # Fondo púrpura corporativo
+LIGHT_PURPLE = "#8F7BC1"   # Púrpura claro para líneas/barras sobre fondo púrpura
+MEDIUM_PURPLE = "#6E54A3"  # Púrpura medio para categorías diferenciadas
+COMPLEMENT_GREEN = "#6FBF73"  # Verde suave armónico
 
-# Lighter purple for grid/axes lines
-LIGHT_PURPLE = "#8F7BC1"   # Softer purple for contrast
-
-# Backgrounds
-PRIMARY_BG = PRIMARY_COLOR       # Purple background for sections/tables
-TABLE_BG_COLOR = PRIMARY_COLOR   # Purple tables
-GRAPH_BG_COLOR = PRIMARY_COLOR   # Purple plots
-BG_GRADIENT = PRIMARY_COLOR      # Flat purple instead of gradient
-DARK_BG_COLOR = "#FFFFFF"        # White (light mode alt)
+# Fondos
+PRIMARY_BG = PRIMARY_COLOR
+TABLE_BG_COLOR = PRIMARY_COLOR
+GRAPH_BG_COLOR = PRIMARY_COLOR
+BG_GRADIENT = PRIMARY_COLOR
+DARK_BG_COLOR = "#FFFFFF"
 WHITE = "#FFFFFF"
 BLACK = "#000000"
 
-# Grid & line colors
+# Colores de grid
 GRID_COLOR = LIGHT_PURPLE
 
-# RGBA versions
+# RGBA
 ACCENT_RGBA = "[241, 172, 75, 160]"
 PRIMARY_RGBA = "[66, 45, 127, 255]"
 LIGHT_PURPLE_RGBA = "[143, 123, 193, 255]"
+MEDIUM_PURPLE_RGBA = "[110, 84, 163, 255]"
 
-# Color mapping
+# Colores para series históricas y predicciones
 COLOR_DISCRETE_MAP = {
     "Histórico": ACCENT_COLOR,
-    "Escenario base": PRIMARY_BG,
-    "Escenario alterno": "#FF4B4B",
+    "Escenario base": LIGHT_PURPLE,      # Antes PRIMARY_BG
+    "Escenario alterno": "#FF4B4B",      # Rojo
+    "Acepta Oferta": LIGHT_PURPLE,       # Evita que se pierda en el fondo
+    "Fin de Semana": MEDIUM_PURPLE,      # Diferente a fondo
+    "Semana": ACCENT_COLOR
 }
-COLOR_SEQUENCE = [ACCENT_COLOR, PRIMARY_BG]
-PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
 
+# Colores para gráficas de torta o barras duales
+COLOR_SEQUENCE = [ACCENT_COLOR, MEDIUM_PURPLE]
+PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": MEDIUM_PURPLE}
+
+# --- CONSTANTES ---
 # Rango horario estándar para la proyección (9–21)
 HOURS_RANGE = list(range(9, 22))
 # Fecha límite para las proyecciones automáticas
@@ -1278,61 +1284,56 @@ with tab_turno:
     # Filtrar df_suc según el rango seleccionado
     df_suc_filtrado = filtrar_por_rango(df_suc.copy(), dias_analisis)
 
-  # ——— Efectividad promedio por día de la semana y turno ———
+    # ——— Análisis por turno ———
     st.markdown("---")
-    st.subheader("📊 Efectividad promedio por día de la semana y por turno")
-
-    # 1) Preparamos día de la semana y mapeo de turnos
-    dias_map = {
-        'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
-        'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
-    }
-
+    st.subheader("📊 Visitas y Acepta Oferta promedio por turno")
 
     # Generamos la columna 'turno' a partir de df_suc_filtrado
     df_turnos = assign_turno(df_suc_filtrado.copy())
 
-    df_turnos['DíaSemana'] = df_turnos['FECHA'].dt.day_name().map(dias_map)
-    turno_map = {1: '9–11', 2: '12–14', 3: '15–17', 4: '18–21', 0: 'Fuera rango'}
-    df_turnos['Turno'] = df_turnos['turno'].map(turno_map)
+    # Métricas originales (para la tabla)
+    metrics = ['T_VISITAS', 'T_AO', 'DOTACION', 'P_EFECTIVIDAD']
 
-    # 2) Calculamos el promedio
-    df_dia_turno = (
+    # Agrupamos y calculamos medias
+    res_turno = (
         df_turnos
-        .groupby(['DíaSemana', 'Turno'], observed=True)['P_EFECTIVIDAD']
+        .groupby('turno')[metrics]
         .mean()
         .reset_index()
-        .rename(columns={'P_EFECTIVIDAD': 'Efectividad'})
     )
+    res_turno['Turno'] = res_turno['turno'].map({
+        0: 'Fuera rango',
+        1: '9–11',
+        2: '12–14',
+        3: '15–17',
+        4: '18–21'
+    })
 
-    # 3) Orden de días y turnos
-    orden_dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-    orden_turnos = ['9–11', '12–14', '15–17', '18–21']
-
-    df_dia_turno['DíaSemana'] = pd.Categorical(df_dia_turno['DíaSemana'], categories=orden_dias, ordered=True)
-    df_dia_turno['Turno'] = pd.Categorical(df_dia_turno['Turno'], categories=orden_turnos, ordered=True)
-
-    # 4) Redondeo
-    df_dia_turno['Efectividad'] = df_dia_turno['Efectividad'].round(2)
-
-    # 5) Plot
+    COLOR_SEQUENCE_TURNOS = [
+    ACCENT_COLOR,      # 9–11
+    LIGHT_PURPLE,      # 12–14
+    MEDIUM_PURPLE,     # 15–17
+    COMPLEMENT_GREEN   # 18–21
+]
+    # — Gráfico: solo T_VISITAS y T_AO, con renombrado de etiquetas —
+    metrics_graph = ['T_VISITAS', 'T_AO']
     fig = px.bar(
-        df_dia_turno,
-        x='DíaSemana',
-        y='Efectividad',
-        color='Turno',
-        barmode='group',
-        color_discrete_sequence=COLOR_SEQUENCE,
-        category_orders={'DíaSemana': orden_dias, 'Turno': orden_turnos},
-        labels={
-            'DíaSemana': 'Día de la semana',
-            'Efectividad': 'Efectividad promedio',
-            'Turno': 'Franja horaria'
-        },
-        title=f'Efectividad promedio por día de la semana y por turno ({rango_seleccionado})'
-    )
+    df_dia_turno,
+    x='DíaSemana',
+    y='Efectividad',
+    color='Turno',
+    barmode='group',
+    color_discrete_sequence=COLOR_SEQUENCE_TURNOS,  # <- aquí los 4 colores nuevos
+    category_orders={'DíaSemana': orden_dias, 'Turno': orden_turnos},
+    labels={
+        'DíaSemana': 'Día de la semana',
+        'Efectividad': 'Efectividad promedio',
+        'Turno': 'Franja horaria'
+    },
+    title=f'Efectividad promedio por día de la semana y por turno ({rango_seleccionado})'
+)
+
     fig.update_layout(
-        yaxis_tickformat='.2f',
         plot_bgcolor=GRAPH_BG_COLOR,
         paper_bgcolor=GRAPH_BG_COLOR,
         font_color=BLACK,
@@ -1342,7 +1343,7 @@ with tab_turno:
     fig.update_xaxes(gridcolor=GRID_COLOR)
     fig.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig, use_container_width=True, theme=None)
-    
+
     # ——— KPI de conversión visitas → ofertas aceptadas por turno ———
     st.markdown("---")
     st.subheader("📈 Conversión de visitas a ofertas aceptadas por turno")
@@ -1821,4 +1822,3 @@ with tab_turno:
     st.plotly_chart(fig_box_eff, use_container_width=True, theme=None)
 
     st.markdown("---")
-
