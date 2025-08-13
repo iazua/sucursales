@@ -12,41 +12,45 @@ import plotly.graph_objects as go
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
 from plotly.subplots import make_subplots
-
 # ---------------------------------------------------------------------------
-# Paleta oficial Banco - versión con fondos púrpura y líneas visibles
+# Paleta oficial Banco - versión contrastada
 
-ACCENT_COLOR = "#F1AC4B"   # Sandy Brown
-PRIMARY_COLOR = "#422D7F"  # Corporate Purple (backgrounds)
+ACCENT_COLOR = "#F1AC4B"   # Sandy Brown (Histórico)
+PRIMARY_COLOR = "#422D7F"  # Fondo púrpura corporativo
+LIGHT_PURPLE = "#8F7BC1"   # Púrpura claro para líneas/barras sobre fondo púrpura
+MEDIUM_PURPLE = "#6E54A3"  # Púrpura medio para categorías diferenciadas
 
-# Lighter purple for grid/axes lines
-LIGHT_PURPLE = "#8F7BC1"   # Softer purple for contrast
-
-# Backgrounds
-PRIMARY_BG = PRIMARY_COLOR       # Purple background for sections/tables
-TABLE_BG_COLOR = PRIMARY_COLOR   # Purple tables
-GRAPH_BG_COLOR = PRIMARY_COLOR   # Purple plots
-BG_GRADIENT = PRIMARY_COLOR      # Flat purple instead of gradient
-DARK_BG_COLOR = "#FFFFFF"        # White (light mode alt)
+# Fondos
+PRIMARY_BG = PRIMARY_COLOR
+TABLE_BG_COLOR = PRIMARY_COLOR
+GRAPH_BG_COLOR = PRIMARY_COLOR
+BG_GRADIENT = PRIMARY_COLOR
+DARK_BG_COLOR = "#FFFFFF"
 WHITE = "#FFFFFF"
 BLACK = "#000000"
 
-# Grid & line colors
+# Colores de grid
 GRID_COLOR = LIGHT_PURPLE
 
-# RGBA versions
+# RGBA
 ACCENT_RGBA = "[241, 172, 75, 160]"
 PRIMARY_RGBA = "[66, 45, 127, 255]"
 LIGHT_PURPLE_RGBA = "[143, 123, 193, 255]"
+MEDIUM_PURPLE_RGBA = "[110, 84, 163, 255]"
 
-# Color mapping
+# Colores para series históricas y predicciones
 COLOR_DISCRETE_MAP = {
     "Histórico": ACCENT_COLOR,
-    "Escenario base": PRIMARY_BG,
-    "Escenario alterno": "#FF4B4B",
+    "Escenario base": LIGHT_PURPLE,      # Antes PRIMARY_BG
+    "Escenario alterno": "#FF4B4B",      # Rojo
+    "Acepta Oferta": LIGHT_PURPLE,       # Evita que se pierda en el fondo
+    "Fin de Semana": MEDIUM_PURPLE,      # Diferente a fondo
+    "Semana": ACCENT_COLOR
 }
-COLOR_SEQUENCE = [ACCENT_COLOR, PRIMARY_BG]
-PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
+
+# Colores para gráficas de torta o barras duales
+COLOR_SEQUENCE = [ACCENT_COLOR, MEDIUM_PURPLE]
+PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": MEDIUM_PURPLE}
 
 # --- CONSTANTES ---
 # Rango horario estándar para la proyección (9–21)
