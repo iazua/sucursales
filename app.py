@@ -1287,6 +1287,11 @@ with tab_turno:
         'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
         'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
     }
+
+
+    # Generamos la columna 'turno' a partir de df_suc_filtrado
+    df_turnos = assign_turno(df_suc_filtrado.copy())
+
     df_turnos['DíaSemana'] = df_turnos['FECHA'].dt.day_name().map(dias_map)
     turno_map = {1: '9–11', 2: '12–14', 3: '15–17', 4: '18–21', 0: 'Fuera rango'}
     df_turnos['Turno'] = df_turnos['turno'].map(turno_map)
