@@ -14,39 +14,42 @@ from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 from plotly.subplots import make_subplots
 
 # ---------------------------------------------------------------------------
-# Paleta oficial Banco
-ACCENT_COLOR = "#F1AC4B"  # Sandy Brown
+# ---------------------------------------------------------------------------
+# Paleta oficial Banco - versión con fondos planos púrpura
 
-PRIMARY_COLOR = "#422D7F"  # Minsk
-# Color de fondo para secciones claras y tablas
-PRIMARY_BG = "#F5F1FA"
-# Fondo general claro para el modo light
-DARK_BG_COLOR = "#FFFFFF"  # Light background
-# Fondo transparente para las gráficas
-GRAPH_BG_COLOR = "rgba(0, 0, 0, 0)"
+ACCENT_COLOR = "#F1AC4B"   # Sandy Brown
+PRIMARY_COLOR = "#422D7F"  # Minsk (corporate purple)
 
-# Fondo de la página con gradiente corporativo
-BG_GRADIENT = f"linear-gradient(135deg, {PRIMARY_COLOR} 0%, {ACCENT_COLOR} 100%)"
-# Color de fondo para secciones claras y tablas
-PRIMARY_BG = "#F8F1FA"
-# Color de las tablas sobre fondo claro
-TABLE_BG_COLOR = "#F8F9FA"
+# Fondo general púrpura para tablas y gráficos
+PRIMARY_BG = PRIMARY_COLOR       # Purple for light sections/tables
+TABLE_BG_COLOR = PRIMARY_COLOR   # Purple background for tables
+GRAPH_BG_COLOR = PRIMARY_COLOR   # Purple background for plots
+
+# Fondos claros si los necesitas en otras secciones
+DARK_BG_COLOR = "#FFFFFF"  # Light background (white)
 WHITE = "#FFFFFF"
 BLACK = "#000000"
+
+# El gradiente se elimina y se reemplaza por púrpura plano
+BG_GRADIENT = PRIMARY_COLOR
+
+# Grid lines & colors
 GRID_COLOR = "#333333"  # Dark grid lines
-ACCENT_RGBA = "[241, 172, 75, 160]"  # Sandy Brown con opacidad
-PRIMARY_RGBA = "[79, 45, 127, 255]"  # Minsk en formato RGBA para resaltar
-# Mapeo de colores para series históricas y de predicción
+
+# RGBA versions if needed
+ACCENT_RGBA = "[241, 172, 75, 160]"  # Sandy Brown with opacity
+PRIMARY_RGBA = "[66, 45, 127, 255]"  # Minsk purple RGBA
+
+# Color mapping for historical and prediction series
 COLOR_DISCRETE_MAP = {
     "Histórico": ACCENT_COLOR,
     "Escenario base": PRIMARY_BG,
-    "Escenario alterno": "#FF4B4B",  # rojo para diferenciar el escenario alterno
+    "Escenario alterno": "#FF4B4B",
 }
-# Colores para series donde se muestran dos categorías
-# (e.g. Semana vs Fin de Semana) en gráficas de torta o barras
+
+# Colors for dual-category series
 COLOR_SEQUENCE = [ACCENT_COLOR, PRIMARY_BG]
 PIE_COLOR_MAP = {"Semana": ACCENT_COLOR, "Fin de Semana": PRIMARY_BG}
-# ---------------------------------------------------------------------------
 
 # --- CONSTANTES ---
 # Rango horario estándar para la proyección (9–21)
