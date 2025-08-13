@@ -13,13 +13,13 @@ from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
 from plotly.subplots import make_subplots
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Paleta oficial Banco - versión contrastada
 
 ACCENT_COLOR = "#F1AC4B"   # Sandy Brown (Histórico)
 PRIMARY_COLOR = "#422D7F"  # Fondo púrpura corporativo
 LIGHT_PURPLE = "#8F7BC1"   # Púrpura claro para líneas/barras sobre fondo púrpura
 MEDIUM_PURPLE = "#6E54A3"  # Púrpura medio para categorías diferenciadas
-COMPLEMENT_GREEN = "#6FBF73"  # Verde suave armónico
 
 # Fondos
 PRIMARY_BG = PRIMARY_COLOR
