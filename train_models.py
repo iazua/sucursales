@@ -12,21 +12,24 @@ from utils import (
     estimar_dotacion_optima,
 )
 
+# Definimos las dos nuevas columnas de dotación
+DOTACION_COLUMNS = ["DOTACION_AACC", "DOTACION_VFI"]
 MODEL_DIR = "models_prophet"
 PROPHET_DIR = "models_prophet"
 TARGETS = ["T_VISITAS", "T_AO"]
 HOURS_RANGE = list(range(9, 22))
 
-def load_data(path: str = "data/DOTACION_EFECTIVIDAD.xlsx") -> pd.DataFrame:
+
+def load_data(path: str = "data/DOTACION_EFECTIVIDAD_updated-AC.xlsx") -> pd.DataFrame:
     """Load raw data from Excel."""
     return pd.read_excel(path)
 
 
 def train_models(
-    df: pd.DataFrame,
-    horizon_days: int = 365,
-    noise_scale: float = 0.0,
-    changepoint_prior_scale: float = 0.5,
+        df: pd.DataFrame,
+        horizon_days: int = 365,
+        noise_scale: float = 0.0,
+        changepoint_prior_scale: float = 0.5,
 ) -> None:
     """Train a Prophet model for each branch and target and save forecasts."""
     os.makedirs(MODEL_DIR, exist_ok=True)
@@ -36,7 +39,6 @@ def train_models(
     df.columns = df.columns.str.strip().str.upper()
     df["FECHA"] = pd.to_datetime(df["FECHA"])
     df["COD_SUC"] = df["COD_SUC"].astype(str).str.strip()
-
 
     # Aggregate at daily level
     df_daily = (
@@ -67,21 +69,25 @@ def train_models(
 
             fname = f"prophet_{target}_{branch}.pkl"
             joblib.dump(model, os.path.join(MODEL_DIR, fname))
-        # --- Prophet forecast for DOTACION ---
-        df_dot = (
-            df[df["COD_SUC"] == branch][["FECHA", "DOTACION"]]
-            .groupby("FECHA", as_index=False)
-            .mean()
-            .rename(columns={"FECHA": "fecha", "DOTACION": "dotacion"})
-        )
-        prophet_forecast = forecast_dotacion_prophet(
-            df_dot,
-            horizon_days=horizon_days,
-            noise_scale=noise_scale,
-            changepoint_prior_scale=changepoint_prior_scale,
-        )
-        forecast_path = os.path.join(PROPHET_DIR, f"{branch}_forecast.csv")
-        prophet_forecast.to_csv(forecast_path, index=False)
+
+        # --- Prophet forecast for DOTACION_AACC and DOTACION_VFI ---
+        # Iteramos sobre la nueva lista DOTACION_COLUMNS
+        for dotacion_col in DOTACION_COLUMNS:
+            df_dot = (
+                df[df["COD_SUC"] == branch][["FECHA", dotacion_col]]
+                .groupby("FECHA", as_index=False)
+                .mean()
+                .rename(columns={"FECHA": "fecha", dotacion_col: "dotacion"})
+            )
+            prophet_forecast = forecast_dotacion_prophet(
+                df_dot,
+                horizon_days=horizon_days,
+                noise_scale=noise_scale,
+                changepoint_prior_scale=changepoint_prior_scale,
+            )
+            # El nombre del archivo ahora incluye el nombre de la columna de dotación
+            forecast_path = os.path.join(PROPHET_DIR, f"{branch}_{dotacion_col}_forecast.csv")
+            prophet_forecast.to_csv(forecast_path, index=False)
 
         # --- Prophet forecasts for operational targets ---
         for tgt in TARGETS:
@@ -103,13 +109,14 @@ def _load_model(target: str, branch: str):
 
 
 def generate_predictions(
-    df_hist: pd.DataFrame,
-    branch: str,
-    days: int = 7,
-    efectividad_obj: float = 0.6,
-    start_date: pd.Timestamp | None = None,
-    end_date: pd.Timestamp | None = None,
-    noise_scale: float = 0.0,
+        df_hist: pd.DataFrame,
+        branch: str,
+        days: int = 7,
+        efectividad_obj: float = 0.6,
+        start_date: pd.Timestamp | None = None,
+        end_date: pd.Timestamp | None = None,
+        noise_scale: float = 0.0,
+        dotacion_type: str = "DOTACION_AACC"  # Nuevo parámetro para especificar el tipo de dotación
 ) -> pd.DataFrame:
     """Generate hourly predictions for the next ``days`` days.
 
@@ -124,6 +131,10 @@ def generate_predictions(
     df_hist.columns = df_hist.columns.str.strip().str.upper()
     df_hist["FECHA"] = pd.to_datetime(df_hist["FECHA"])
     df_hist["COD_SUC"] = df_hist["COD_SUC"].astype(str).str.strip()
+
+    # Aseguramos que la columna de dotación existe en el dataframe histórico
+    if dotacion_type not in df_hist.columns:
+        raise ValueError(f"Column '{dotacion_type}' not found in data.")
 
     if start_date is None:
         last_date = df_hist[df_hist["COD_SUC"] == branch]["FECHA"].max()
@@ -160,7 +171,7 @@ def generate_predictions(
         df_h = df_h[daily_totals > 0]
         df_h["share"] = df_h[target] / daily_totals
         weights = (
-            df_h.groupby("HORA")["share"].mean().reindex(HOURS_RANGE, fill_value=1/len(HOURS_RANGE))
+            df_h.groupby("HORA")["share"].mean().reindex(HOURS_RANGE, fill_value=1 / len(HOURS_RANGE))
         )
         w = weights.values
         return w / w.sum()
@@ -195,7 +206,6 @@ def generate_predictions(
         ])
         result[f"{t}_pred"] = hourly_preds
 
-
     result["T_AO_VENTA_req"] = result["T_AO_pred"] * efectividad_obj
     result["P_EFECTIVIDAD_req"] = np.where(
         result["T_AO_pred"] > 0,
@@ -203,11 +213,15 @@ def generate_predictions(
         0,
     )
     # --- Required staffing based on desired effectiveness ---
-    hist_eff = df_branch[["FECHA", "DOTACION", "T_AO", "T_AO_VENTA"]].dropna()
+    # Usamos el tipo de dotación pasado como argumento
+    hist_eff = df_branch[["FECHA", dotacion_type, "T_AO", "T_AO_VENTA"]].dropna()
+    hist_eff = hist_eff.rename(
+        columns={dotacion_type: "DOTACION"})  # Renombramos temporalmente para reutilizar las funciones
+
     params_eff = estimar_parametros_efectividad(hist_eff[["DOTACION", "T_AO", "T_AO_VENTA"]])
     params_eff_by_day = estimar_parametros_efectividad_por_dia(hist_eff)
 
-    max_dot = float(df_branch["DOTACION"].max()) if "DOTACION" in df_branch.columns else 0
+    max_dot = float(df_branch[dotacion_type].max()) if dotacion_type in df_branch.columns else 0
 
     result["DOTACION_req"] = 0
     for fecha, grp in result.groupby("FECHA"):
