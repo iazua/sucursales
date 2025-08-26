@@ -12,12 +12,13 @@ import plotly.graph_objects as go
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
 from plotly.subplots import make_subplots
+
 # ---------------------------------------------------------------------------
 # Paleta oficial Banco - versión contrastada
 
-ACCENT_COLOR = "#F1AC4B"   # Sandy Brown (Histórico)
+ACCENT_COLOR = "#F1AC4B"  # Sandy Brown (Histórico)
 PRIMARY_COLOR = "#422D7F"  # Fondo púrpura corporativo
-LIGHT_PURPLE = "#8F7BC1"   # Púrpura claro para líneas/barras sobre fondo púrpura
+LIGHT_PURPLE = "#8F7BC1"  # Púrpura claro para líneas/barras sobre fondo púrpura
 MEDIUM_PURPLE = "#6E54A3"  # Púrpura medio para categorías diferenciadas
 
 # Fondos
@@ -41,10 +42,10 @@ MEDIUM_PURPLE_RGBA = "[110, 84, 163, 255]"
 # Colores para series históricas y predicciones
 COLOR_DISCRETE_MAP = {
     "Histórico": ACCENT_COLOR,
-    "Escenario base": LIGHT_PURPLE,      # Antes PRIMARY_BG
-    "Escenario alterno": "#FF4B4B",      # Rojo
-    "Acepta Oferta": LIGHT_PURPLE,       # Evita que se pierda en el fondo
-    "Fin de Semana": MEDIUM_PURPLE,      # Diferente a fondo
+    "Escenario base": LIGHT_PURPLE,  # Antes PRIMARY_BG
+    "Escenario alterno": "#FF4B4B",  # Rojo
+    "Acepta Oferta": LIGHT_PURPLE,  # Evita que se pierda en el fondo
+    "Fin de Semana": MEDIUM_PURPLE,  # Diferente a fondo
     "Semana": ACCENT_COLOR
 }
 
@@ -71,6 +72,9 @@ DAY_NAME_MAP_ES = {
     "Saturday": "Sábado",
     "Sunday": "Domingo",
 }
+
+# Definimos las columnas de dotación para el selector
+DOTACION_COLUMNS = ["DOTACION_AACC", "DOTACION_VFI"]
 
 # --- CONFIGURACIÓN INICIAL ---
 st.set_page_config(page_title="Predicción de Dotación Óptima (Hourly)", layout="wide")
@@ -215,7 +219,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 col1, col2, col3 = st.columns([1, 1, 1])
 with col2:
     st.image(
@@ -227,7 +230,7 @@ with col2:
 # --- CARGA DE DATOS ---
 @st.cache_data
 def load_data():
-    df = pd.read_excel("data/DOTACION_EFECTIVIDAD.xlsx")
+    df = pd.read_excel("data/DOTACION_EFECTIVIDAD_updated-AC.xlsx")
     df.columns = df.columns.str.strip().str.upper()
     df["FECHA"] = pd.to_datetime(df["FECHA"])
 
@@ -250,7 +253,7 @@ df_regions['COD_SUC'] = df_regions['COD_SUC'].astype(str).str.strip()
 
 # Verificar duplicados
 if df_regions['COD_SUC'].duplicated().any():
-    st.warning("Advertencia: Hay valores duplicados en COD_SUC de regions.xlsx. Se conservará el primero.")
+    st.warning("Advertencia: Hay valores duplicados en regions.xlsx. Se conservará el primero.")
     df_regions = df_regions.drop_duplicates(subset='COD_SUC', keep='first')
 
 # Merge seguro
@@ -520,17 +523,26 @@ with tab_pred:
     # Se fija de forma estática a 306 días
     days_proj = 306
     sucursales = sorted(df["COD_SUC"].unique())
-    cod_suc = st.selectbox("Selecciona una sucursal", sucursales)
+    col_sel_suc, col_sel_dotacion = st.columns(2)
+    with col_sel_suc:
+        cod_suc = st.selectbox("Selecciona una sucursal", sucursales)
+    with col_sel_dotacion:
+        # Nuevo selector para el tipo de dotación
+        dotacion_type_selected = st.selectbox(
+            "Selecciona el tipo de dotación",
+            DOTACION_COLUMNS
+        )
 
     # --- FILTRAR Y PREPARAR HISTÓRICO ---
     df_suc = df[df["COD_SUC"] == cod_suc].copy()
     df_suc = df_suc.sort_values(["FECHA", "HORA"] if "HORA" in df_suc.columns else ["FECHA"]).reset_index(drop=True)
 
     # --- Dotación promedio histórica por día de la semana y hora ---
+    # MODIFICACIÓN: Usamos la columna de dotación seleccionada por el usuario
     if "HORA" in df_suc.columns:
         df_suc["weekday"] = df_suc["FECHA"].dt.dayofweek
         avg_dot_map = (
-            df_suc.groupby(["weekday", "HORA"])["DOTACION"].mean().to_dict()
+            df_suc.groupby(["weekday", "HORA"])[dotacion_type_selected].mean().to_dict()
         )
     else:
         avg_dot_map = {}
@@ -540,7 +552,8 @@ with tab_pred:
         df_suc["P_EFECTIVIDAD"] = calcular_efectividad(df_suc["T_AO"], df_suc["T_AO_VENTA"])
 
     # Promedio de efectividad con DOTACION=1 (para fallback)
-    df_dot1 = df_suc[df_suc["DOTACION"] == 1]
+    # MODIFICACIÓN: Usamos la columna de dotación seleccionada
+    df_dot1 = df_suc[df_suc[dotacion_type_selected] == 1]
     avg_eff_dot1 = df_dot1["P_EFECTIVIDAD"].mean() if not df_dot1.empty else np.nan
 
     # --- SLIDER DE EFECTIVIDAD OBJETIVO ---
@@ -581,7 +594,8 @@ with tab_pred:
                       cod_suc: int,
                       efect_obj: float,
                       days: int,
-                      noise_scale: float = 0.0) -> pd.DataFrame:
+                      noise_scale: float = 0.0,
+                      dotacion_type: str = "DOTACION_AACC") -> pd.DataFrame:
         """Versión rápida usando `generate_predictions` vectorizado."""
         last_date = df_all[df_all["COD_SUC"] == cod_suc]["FECHA"].max()
         start_dt = last_date + timedelta(days=1)
@@ -593,6 +607,7 @@ with tab_pred:
             start_date=start_dt,
             end_date=end_dt,
             noise_scale=noise_scale,
+            dotacion_type=dotacion_type # Aquí se pasa el nuevo parámetro
         )
 
 
@@ -605,6 +620,7 @@ with tab_pred:
             efectividad_obj,
             days_proj,
             noise_scale=0.0,
+            dotacion_type=dotacion_type_selected # Pasa el tipo de dotación
         ),
         "Escenario alterno": forecast_fast(
             df,
@@ -612,6 +628,7 @@ with tab_pred:
             efectividad_obj,
             days_proj,
             noise_scale=noise_slider,
+            dotacion_type=dotacion_type_selected # Pasa el tipo de dotación
         ),
     }
 
@@ -655,17 +672,19 @@ with tab_pred:
     df_hourly["% Efectividad requerida"] = df_hourly["% Efectividad requerida"].round(2)
     df_hourly["Dotación requerida"] = df_hourly["Dotación requerida"].round(0).astype(int)
 
+
     # 4.b) Dotación histórica y ajuste necesario
     def _avg_hist(row):
         key = (row["weekday"], row["Hora"])
         val = avg_dot_map.get(key, np.nan)
         return int(round(val)) if not pd.isna(val) else np.nan
 
+
     df_hourly["Dotación histórica"] = (
         df_hourly.apply(_avg_hist, axis=1)
     ).round(0).astype("Int64")
     df_hourly["Ajuste dotación"] = (
-        df_hourly["Dotación requerida"] - df_hourly["Dotación histórica"]
+            df_hourly["Dotación requerida"] - df_hourly["Dotación histórica"]
     ).round(0).astype("Int64")
     # 4.c) Efectividad lograda en 2024 para la misma fecha y hora
     df_2024 = df_suc[df_suc['FECHA'].dt.year == 2024].copy()
@@ -679,16 +698,16 @@ with tab_pred:
         .to_dict()
     )
 
+
     def _eff_2024(row):
         fecha_2024 = row['FECHA'].replace(year=2024).date()
         key = (fecha_2024, row['Hora'])
         return eff_map_2024.get(key, np.nan)
 
+
     df_hourly['% Efectividad 2024'] = (
         df_hourly.apply(_eff_2024, axis=1)
     ).round(2)
-
-
 
     # 5) Seleccionamos el orden final de columnas
     df_hourly = df_hourly[[
@@ -737,15 +756,15 @@ with tab_pred:
     gb.configure_column("Día", aggFunc="first", cellRenderer=dia_renderer)
     gb.configure_column("Hora", type=["numericColumn"])
     gb.configure_column("Visitas estimadas", type=["numericColumn"], aggFunc="sum",
-                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
+                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_column("Ofertas aceptadas estimadas", type=["numericColumn"], aggFunc="sum",
-                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
+                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_column("Ventas requeridas", type=["numericColumn"], aggFunc="sum",
-                       valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
+                        valueFormatter="Math.round(params.value).toLocaleString('es-ES')")
     gb.configure_column("% Efectividad requerida", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter=two_dec_formatter)
+                        valueFormatter=two_dec_formatter)
     gb.configure_column("% Efectividad 2024", type=["numericColumn"], aggFunc="avg",
-                       valueFormatter=two_dec_formatter)
+                        valueFormatter=two_dec_formatter)
     gb.configure_column(
         "Dotación requerida",
         type=["numericColumn"],
@@ -798,6 +817,7 @@ with tab_pred:
     labels_turno = {0: "Fuera rango", 1: "9–11", 2: "12–14", 3: "15–17", 4: "18–21"}
     resumen["Turno"] = resumen["turno"].map(labels_turno)
 
+
     def _accion(x: float) -> str:
         if x > 0.5:
             return "Reforzar personal"
@@ -805,6 +825,7 @@ with tab_pred:
             return "Mover personal"
         else:
             return "Mantener dotación"
+
 
     resumen["Ajuste prom"] = resumen["Ajuste dotación"].round(1)
     resumen["Acción"] = resumen["Ajuste dotación"].apply(_accion)
@@ -824,7 +845,9 @@ with tab_pred:
     st.subheader("Curva de Efectividad vs. Dotación")
 
     # 1. Estimar parámetros históricos
-    hist = df_suc[['DOTACION', 'T_AO', 'T_AO_VENTA']].dropna()
+    # MODIFICACIÓN: Usamos la columna de dotación seleccionada
+    hist = df_suc[[dotacion_type_selected, 'T_AO', 'T_AO_VENTA']].dropna()
+    hist.rename(columns={dotacion_type_selected: "DOTACION"}, inplace=True) # Renombramos para compatibilidad con la función
     if len(hist) >= 3:
         params_eff = estimar_parametros_efectividad(hist)
     else:
@@ -955,7 +978,6 @@ with tab_pred:
     # --- GRÁFICO 1: Ofertas Aceptadas diario ---
     st.subheader("📈 Histórico y Predicción de Ofertas Aceptadas")
 
-
     # Agrupar histórico por fecha
     hist_ao = (
         df_suc
@@ -1006,8 +1028,6 @@ with tab_pred:
     fig.update_xaxes(rangeslider_visible=True, gridcolor=GRID_COLOR)
     fig.update_yaxes(gridcolor=GRID_COLOR)
     st.plotly_chart(fig, use_container_width=True, theme=None)
-
-
 
     # --- GRÁFICO 2: Ventas Concretadas diario ---
     st.subheader("📈 Histórico y Predicción de Ventas Concretadas")
@@ -1290,8 +1310,8 @@ with tab_turno:
     # Generamos la columna 'turno' a partir de df_suc_filtrado
     df_turnos = assign_turno(df_suc_filtrado.copy())
 
-    # Métricas originales (para la tabla)
-    metrics = ['T_VISITAS', 'T_AO', 'DOTACION', 'P_EFECTIVIDAD']
+    # MODIFICACIÓN: cambiamos 'DOTACION' por la variable seleccionada
+    metrics = ['T_VISITAS', 'T_AO', dotacion_type_selected, 'P_EFECTIVIDAD']
 
     # Agrupamos y calculamos medias
     res_turno = (
@@ -1324,6 +1344,7 @@ with tab_turno:
         },
         title=f"Visitas y Acepta Oferta promedio por franja horaria ({rango_seleccionado})"
     )
+    fig.for_each_trace(lambda t: t.update(name='Visitas' if t.name == 'T_VISITAS' else 'Acepta Oferta'))
     fig.update_layout(
         plot_bgcolor=GRAPH_BG_COLOR,
         paper_bgcolor=GRAPH_BG_COLOR,
@@ -1538,8 +1559,9 @@ with tab_turno:
 
     # 1) Calculamos la productividad por registro
     df_prod = df_turnos.copy()
+    # MODIFICACIÓN: Usamos la columna de dotación seleccionada
     df_prod['Productividad'] = df_prod.apply(
-        lambda r: r['T_AO'] / r['DOTACION'] if r['DOTACION'] > 0 else 0,
+        lambda r: r['T_AO'] / r[dotacion_type_selected] if r[dotacion_type_selected] > 0 else 0,
         axis=1
     )
 
@@ -1580,8 +1602,9 @@ with tab_turno:
 
     # 1) Clonamos y calculamos la carga por agente
     df_carga = df_turnos.copy()
+    # MODIFICACIÓN: Usamos la columna de dotación seleccionada
     df_carga['Carga'] = df_carga.apply(
-        lambda r: r['T_AO'] / r['DOTACION'] if r['DOTACION'] > 0 else np.nan,
+        lambda r: r['T_AO'] / r[dotacion_type_selected] if r[dotacion_type_selected] > 0 else np.nan,
         axis=1
     )
 
@@ -1677,9 +1700,10 @@ with tab_turno:
         df_filtro = df_turnos[df_turnos['FECHA'].dt.weekday == dias_map[seleccion]]
 
     # Recalcular resumen por turno
+    # MODIFICACIÓN: Aseguramos que la columna de dotación está en la selección
     res_turno_sel = (
         df_filtro
-        .groupby('turno')[['T_VISITAS', 'T_AO', 'DOTACION', 'P_EFECTIVIDAD']]
+        .groupby('turno')[['T_VISITAS', 'T_AO', dotacion_type_selected, 'P_EFECTIVIDAD']]
         .mean()
         .reset_index()
     )
@@ -1688,12 +1712,13 @@ with tab_turno:
     })
 
     # Preparar DataFrame para mostrar y redondear a 2 decimales
+    # MODIFICACIÓN: Renombramos la columna de dotación a un nombre más genérico
     df_display = (
-        res_turno_sel[['Turno', 'T_VISITAS', 'T_AO', 'DOTACION', 'P_EFECTIVIDAD']]
+        res_turno_sel[['Turno', 'T_VISITAS', 'T_AO', dotacion_type_selected, 'P_EFECTIVIDAD']]
         .rename(columns={
             'T_VISITAS': 'Visitas',
             'T_AO': 'Acepta Oferta',
-            'DOTACION': 'Dotación',
+            dotacion_type_selected: 'Dotación',
             'P_EFECTIVIDAD': 'Efectividad'
         })
     )
@@ -1772,7 +1797,8 @@ with tab_turno:
         .groupby('turno')
         .agg(
             Efectividad=('P_EFECTIVIDAD', 'mean'),
-            Dotacion=('DOTACION', 'mean')
+            # MODIFICACIÓN: Usamos la columna de dotación seleccionada
+            Dotacion=(dotacion_type_selected, 'mean')
         )
         .reset_index()
     )
@@ -1788,7 +1814,6 @@ with tab_turno:
             with cols_avg[i]:
                 st.metric(f"Turno {row.Turno}", f"{row.Efectividad_pct:.2f}%")
 
-    
     # Distribución de efectividad por turno
     df_box = df_turnos[df_turnos['turno'] > 0].copy()
     df_box['Turno'] = df_box['turno'].map(turno_map)
